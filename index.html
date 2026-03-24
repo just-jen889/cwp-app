@@ -528,6 +528,21 @@ input.gps-ok{background:#F0F7FA;border-color:#2B6E7E;color:#1D5069;font-weight:6
         <div id="poll-alert" class="hidden" style="margin-top:10px">
           <div class="alert a-danger"><span class="ai">⚠</span><div><strong>Sewage or Hazardous selected.</strong> Investigation required within <strong>24 hours</strong>. If human health threat, notify Environmental Health: <strong>(707) 263-1164</strong>. <span class="cite">§E.9.d.(ii)(a)(c)</span></div></div>
         </div>
+        <div style="margin-top:12px;padding:12px;background:#f8f9fa;border-radius:8px;border:0.5px solid #dde3e6">
+          <div style="font-size:11px;font-weight:600;color:#1E3A4A;margin-bottom:6px">Contamination severity assessment <span style="font-size:10px;color:#aaa;font-family:monospace">§E.9.d.(ii)(a)</span></div>
+          <div style="font-size:12px;color:#555;margin-bottom:9px">Does this discharge pose a <strong>significant contamination risk</strong> or immediate threat to human health or the environment?<br><span style="font-size:11px;color:#999">Consider quantity, toxicity, and proximity to receiving water — this determines the investigation window.</span></div>
+          <div class="cb-group">
+            <div class="cb-item d checked" id="sig-yes" onclick="setSigCont('yes',this)"><div class="cb-box"></div>Yes — significantly contaminated → 24-hr window</div>
+            <div class="cb-item" id="sig-no" onclick="setSigCont('no',this)"><div class="cb-box"></div>No — standard contamination → 72-hr window</div>
+            <div class="cb-item checked" id="sig-unk" onclick="setSigCont('unk',this)"><div class="cb-box"></div>Not yet assessed</div>
+          </div>
+          <div id="sig-24" style="margin-top:8px">
+            <div class="alert a-danger"><span class="ai">⚠</span><div><strong>24-hour investigation window applies.</strong> Initiate investigation within 24 hours of report time. <span class="cite">§E.9.d.(ii)(a)</span></div></div>
+          </div>
+          <div id="sig-72" class="hidden" style="margin-top:8px">
+            <div class="alert a-info"><span class="ai">ℹ</span><div><strong>72-hour investigation window applies.</strong> Initiate investigation within 72 hours of report time. <span class="cite">§E.9.d.(ii)</span></div></div>
+          </div>
+        </div>
       </div>
       <div class="fsec">
         <div class="fsec-title">Discharge details</div>
@@ -732,10 +747,10 @@ input.gps-ok{background:#F0F7FA;border-color:#2B6E7E;color:#1D5069;font-weight:6
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l4 4v9H3z"/><polyline points="10,2 10,6 14,6"/></svg>
             Preview report
           </button>
-          <button class="btn-email" onclick="doEmail()">
+          <a class="btn-email" id="email-btn" href="#" onclick="return buildMailto()">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><polyline points="1,3 8,9 15,3"/></svg>
             Email to RWQCB
-          </button>
+          </a>
           <button class="btn-s" onclick="resetForm()" style="margin-left:auto">Start new record</button>
         </div>
         <div style="font-size:10px;color:#aaa;margin-top:8px">Preview renders below · use "Save as PDF" in preview bar · attach to email</div>
@@ -1883,12 +1898,16 @@ function srcChange(){
 
 // PHOTOS
 function addPhotos(files){
-  [...files].forEach(f=>{
-    if(!f.type.startsWith('image/')) return;
+  const arr=[...files].filter(f=>f.type.startsWith('image/'));
+  let i=0;
+  function next(){
+    if(i>=arr.length){renderPhotoGrid();return;}
+    const f=arr[i++];
     const r=new FileReader();
-    r.onload=e=>{photos.push({name:f.name,url:e.target.result});renderPhotoGrid();};
+    r.onload=e=>{photos.push({name:f.name,url:e.target.result});next();};
     r.readAsDataURL(f);
-  });
+  }
+  next();
 }
 function doDrop(e){e.preventDefault();addPhotos(e.dataTransfer.files);}
 function renderPhotoGrid(){
@@ -2242,20 +2261,6 @@ function doPrint(){
   if(frame.contentWindow){frame.contentWindow.focus();frame.contentWindow.print();}
 }
 
-function doEmail(){
-  const caseId=document.getElementById('caseId')?.value||'—';
-  const loc=document.getElementById('location')?.value||'[location]';
-  const subj=encodeURIComponent('IDDE Investigation Report — '+caseId+' — '+loc);
-  const body=encodeURIComponent(
-    'Elizabeth,\n\nPlease find attached the IDDE Investigation Report for Case '+caseId+'.\n\n'+
-    'Location: '+loc+'\n'+
-    'Incident date: '+fmtDate(document.getElementById('incDate')?.value)+'\n'+
-    'Investigated by: '+(document.getElementById('invBy')?.value||'—')+'\n\n'+
-    'Generated from the Lake County Clean Water Program MS4 compliance tracking system per §E.9.d of Permit WQ 2013-0001-DWQ.\n\n'+
-    'Please see the attached PDF for the full investigation report.\n\nThank you,\nLake County Clean Water Program'
-  );
-  window.location.href='mailto:Elizabeth.Lee@waterboards.ca.gov?cc=Craig.Wetherbee@lakecountyca.gov&subject='+subj+'&body='+body;
-}
 
 function resetForm(){
   photos.length=0;renderPhotoGrid();
@@ -2267,6 +2272,17 @@ function resetForm(){
   refCount=0;
   initForm();
   goFStep(1);
+}
+
+function setSigCont(val,el){
+  document.getElementById('sig-yes').classList.remove('checked','d');
+  document.getElementById('sig-no').classList.remove('checked');
+  document.getElementById('sig-unk').classList.remove('checked');
+  if(val==='yes'){document.getElementById('sig-yes').classList.add('checked','d');}
+  else if(val==='no'){document.getElementById('sig-no').classList.add('checked');}
+  else{document.getElementById('sig-unk').classList.add('checked');}
+  document.getElementById('sig-24').classList.toggle('hidden',val!=='yes');
+  document.getElementById('sig-72').classList.toggle('hidden',val!=='no');
 }
 
 // LOGIN
