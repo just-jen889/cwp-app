@@ -632,7 +632,7 @@ input.gps-ok{background:#F0F7FA;border-color:#2B6E7E;color:#1D5069;font-weight:6
           <div style="font-size:12px;font-weight:600;color:#777">Tap to upload photos or drag &amp; drop</div>
           <div style="font-size:11px;color:#aaa;margin-top:2px">Saved with record · appear in PDF appendix</div>
         </div>
-        <input type="file" id="pi" multiple accept="image/*" capture="environment" style="display:none" onchange="addPhotos(this.files)"/>
+        <input type="file" id="pi" multiple accept="image/*" style="display:none" onchange="addPhotos(this.files)"/>
         <div class="photo-grid" id="pg"></div>
       </div>
       <!-- FIELD SCREENING -->
@@ -2328,15 +2328,11 @@ function doLogin(){
   const pw=document.getElementById('login-pw').value;
   if(pw==='CWP2026!'){
     document.getElementById('login-screen').style.display='none';
-    sessionStorage.setItem('cwp-auth','true');
   } else {
     document.getElementById('login-err').style.display='block';
     document.getElementById('login-pw').value='';
     document.getElementById('login-pw').focus();
   }
-}
-if(sessionStorage.getItem('cwp-auth')==='true'){
-  document.getElementById('login-screen').style.display='none';
 }
 
 // INIT
