@@ -531,16 +531,31 @@ input.gps-ok{background:#F0F7FA;border-color:#2B6E7E;color:#1D5069;font-weight:6
         <div style="margin-top:12px;padding:12px;background:#f8f9fa;border-radius:8px;border:0.5px solid #dde3e6">
           <div style="font-size:11px;font-weight:600;color:#1E3A4A;margin-bottom:6px">Contamination severity assessment <span style="font-size:10px;color:#aaa;font-family:monospace">§E.9.d.(ii)(a)</span></div>
           <div style="font-size:12px;color:#555;margin-bottom:9px">Does this discharge pose a <strong>significant contamination risk</strong> or immediate threat to human health or the environment?<br><span style="font-size:11px;color:#999">Consider quantity, toxicity, and proximity to receiving water — this determines the investigation window.</span></div>
-          <div class="cb-group">
-            <div class="cb-item" id="sig-yes" onclick="setSigCont('yes',this)"><div class="cb-box"></div>Yes — significantly contaminated → 24-hr window</div>
-            <div class="cb-item" id="sig-no" onclick="setSigCont('no',this)"><div class="cb-box"></div>No — standard contamination → 72-hr window</div>
-            <div class="cb-item checked" id="sig-unk" onclick="setSigCont('unk',this)"><div class="cb-box"></div>Not yet assessed</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <div id="sig-yes" onclick="setSigCont('yes')" style="display:flex;align-items:center;gap:5px;padding:5px 8px;border:0.5px solid #c5cdd2;border-radius:6px;cursor:pointer;font-size:12px;background:#fff;user-select:none">
+              <div id="sig-yes-box" style="width:12px;height:12px;border-radius:3px;border:1.5px solid #c5cdd2;flex-shrink:0;display:flex;align-items:center;justify-content:center"></div>
+              Yes — significantly contaminated → 24-hr window
+            </div>
+            <div id="sig-no" onclick="setSigCont('no')" style="display:flex;align-items:center;gap:5px;padding:5px 8px;border:0.5px solid #c5cdd2;border-radius:6px;cursor:pointer;font-size:12px;background:#fff;user-select:none">
+              <div id="sig-no-box" style="width:12px;height:12px;border-radius:3px;border:1.5px solid #c5cdd2;flex-shrink:0;display:flex;align-items:center;justify-content:center"></div>
+              No — standard contamination → 72-hr window
+            </div>
+            <div id="sig-unk" onclick="setSigCont('unk')" style="display:flex;align-items:center;gap:5px;padding:5px 8px;border:0.5px solid #2B6E7E;border-radius:6px;cursor:pointer;font-size:12px;background:#E0EEF2;color:#1D5069;font-weight:600;user-select:none">
+              <div id="sig-unk-box" style="width:12px;height:12px;border-radius:3px;border:1.5px solid #2B6E7E;background:#2B6E7E;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:9px">✓</span></div>
+              Not yet assessed
+            </div>
           </div>
-          <div id="sig-24" class="hidden" style="margin-top:8px">
-            <div class="alert a-danger"><span class="ai">⚠</span><div><strong>24-hour investigation window applies.</strong> Initiate investigation within 24 hours of report time. <span class="cite">§E.9.d.(ii)(a)</span></div></div>
+          <div id="sig-24" style="display:none;margin-top:8px">
+            <div style="border-radius:8px;padding:10px 12px;background:#FCEBEB;border:0.5px solid #F09595;color:#A32D2D;font-size:12px;line-height:1.5;display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:14px;flex-shrink:0">⚠</span>
+              <div><strong>24-hour investigation window applies.</strong> Initiate investigation within 24 hours of report time. <span style="font-size:10px;color:#A32D2D;font-family:monospace">§E.9.d.(ii)(a)</span></div>
+            </div>
           </div>
-          <div id="sig-72" class="hidden" style="margin-top:8px">
-            <div class="alert a-info"><span class="ai">ℹ</span><div><strong>72-hour investigation window applies.</strong> Initiate investigation within 72 hours of report time. <span class="cite">§E.9.d.(ii)</span></div></div>
+          <div id="sig-72" style="display:none;margin-top:8px">
+            <div style="border-radius:8px;padding:10px 12px;background:#E6F1FB;border:0.5px solid #93C4F0;color:#185FA5;font-size:12px;line-height:1.5;display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:14px;flex-shrink:0">ℹ</span>
+              <div><strong>72-hour investigation window applies.</strong> Initiate investigation within 72 hours of report time. <span style="font-size:10px;color:#185FA5;font-family:monospace">§E.9.d.(ii)</span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -2274,11 +2289,34 @@ function resetForm(){
   goFStep(1);
 }
 
-function setSigCont(val,el){
-  document.getElementById('sig-yes').classList.remove('checked','d');
-  document.getElementById('sig-no').classList.remove('checked');
-  document.getElementById('sig-unk').classList.remove('checked');
-  if(val==='yes'){document.getElementById('sig-yes').classList.add('checked','d');}
+function setSigCont(val){
+  // Reset all three options to unselected state
+  const opts={
+    yes:{border:'0.5px solid #c5cdd2',bg:'#fff',color:'',weight:'',boxBorder:'1.5px solid #c5cdd2',boxBg:'',check:''},
+    no:{border:'0.5px solid #c5cdd2',bg:'#fff',color:'',weight:'',boxBorder:'1.5px solid #c5cdd2',boxBg:'',check:''},
+    unk:{border:'0.5px solid #c5cdd2',bg:'#fff',color:'',weight:'',boxBorder:'1.5px solid #c5cdd2',boxBg:'',check:''}
+  };
+  // Apply selected state
+  if(val==='yes'){opts.yes={border:'0.5px solid #E24B4A',bg:'#FEF5F5',color:'#A32D2D',weight:'600',boxBorder:'1.5px solid #E24B4A',boxBg:'#E24B4A',check:'✓'};}
+  else if(val==='no'){opts.no={border:'0.5px solid #2B6E7E',bg:'#E0EEF2',color:'#1D5069',weight:'600',boxBorder:'1.5px solid #2B6E7E',boxBg:'#2B6E7E',check:'✓'};}
+  else{opts.unk={border:'0.5px solid #2B6E7E',bg:'#E0EEF2',color:'#1D5069',weight:'600',boxBorder:'1.5px solid #2B6E7E',boxBg:'#2B6E7E',check:'✓'};}
+  ['yes','no','unk'].forEach(k=>{
+    const el=document.getElementById('sig-'+k);
+    const box=document.getElementById('sig-'+k+'-box');
+    if(!el||!box) return;
+    el.style.border=opts[k].border;
+    el.style.background=opts[k].bg;
+    el.style.color=opts[k].color;
+    el.style.fontWeight=opts[k].weight;
+    box.style.border=opts[k].boxBorder;
+    box.style.background=opts[k].boxBg;
+    box.innerHTML=opts[k].check?`<span style="color:#fff;font-size:9px">${opts[k].check}</span>`:'';
+  });
+  // Show/hide alerts using display not class
+  document.getElementById('sig-24').style.display=val==='yes'?'block':'none';
+  document.getElementById('sig-72').style.display=val==='no'?'block':'none';
+}
+
   else if(val==='no'){document.getElementById('sig-no').classList.add('checked');}
   else{document.getElementById('sig-unk').classList.add('checked');}
   document.getElementById('sig-24').classList.toggle('hidden',val!=='yes');
