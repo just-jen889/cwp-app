@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lake County Clean Water Program</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1a1a;background:#f0f4f5;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:10px;padding:0 16px;background:#1D5069;height:52px;min-height:52px;flex-shrink:0}
+.app-name{font-size:13px;font-weight:600;color:#ffffff;white-space:nowrap}
+.app-sub{font-size:10px;color:rgba(255,255,255,0.75);white-space:nowrap;margin-top:1px}
+.jur-row{margin-left:auto;display:flex;align-items:center;gap:8px}
+.jur-label{font-size:11px;color:rgba(255,255,255,0.75);white-space:nowrap}
+.jur-sel{padding:4px 8px;border-radius:5px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:#ffffff;font-size:11px;cursor:pointer}
+.jur-sel option{background:#1D5069;color:#ffffff}
+.jur-badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(255,255,255,0.18);color:#ffffff;white-space:nowrap}
+/* BODY */
+.body{display:flex;flex:1;overflow:hidden;min-height:0}
+/* SIDEBAR */
+.sidebar{width:188px;min-width:188px;background:#1E3A4A;overflow-y:auto;flex-shrink:0;padding:6px 0}
+.nav-section{font-size:9px;font-weight:700;color:rgba(168,212,224,0.6);padding:10px 13px 3px;text-transform:uppercase;letter-spacing:0.08em}
+.nav-btn{display:flex;align-items:center;gap:8px;padding:8px 13px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.75);border:none;background:none;width:100%;text-align:left;border-left:3px solid transparent;line-height:1.3;font-family:Arial}
+.nav-btn:hover{background:rgba(255,255,255,0.08);color:#ffffff}
+.nav-btn.active{background:rgba(255,255,255,0.13);color:#ffffff;border-left-color:#E8941A;font-weight:600}
+.nav-icon{width:13px;height:13px;flex-shrink:0;opacity:0.7}
+.nav-btn.active .nav-icon{opacity:1}
+/* MAIN */
+.main{flex:1;overflow-y:auto;background:#f0f4f5;min-width:0}
+.page{display:none;padding:16px}.page.active{display:block}
+/* HERO */
+.hero{background:linear-gradient(135deg,#1D5069 0%,#2B6E7E 65%,#4A7D96 100%);padding:18px 22px;border-radius:10px;margin-bottom:16px;color:#ffffff}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.hero-title{font-size:17px;font-weight:600;color:#ffffff;margin-bottom:3px}
+.hero-sub{font-size:11px;color:rgba(255,255,255,0.78);line-height:1.5}
+.hero-date{font-size:10px;color:rgba(255,255,255,0.55);text-align:right;white-space:nowrap;padding-top:3px}
+.hm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.hm{background:rgba(255,255,255,0.13);border-radius:8px;padding:11px}
+.hm-val{font-size:20px;font-weight:600;color:#ffffff}
+.hm-val.ok{color:#9FE1CB}.hm-val.warn{color:#FAC775}.hm-val.danger{color:#F09595}
+.hm-lbl{font-size:10px;color:rgba(255,255,255,0.72);margin-top:3px;line-height:1.3}
+/* MODULE GRID */
+.section-lbl{font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px}
+.tile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.tile{background:#ffffff;border:0.5px solid #dde3e6;border-radius:9px;padding:13px 10px;cursor:pointer;text-align:center;border-top:3px solid #2B6E7E;transition:transform 0.1s,box-shadow 0.1s}
+.tile:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.tile.feat{border-top-color:#E8941A;background:#fffaf5}
+.tile-icon{width:30px;height:30px;border-radius:8px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center}
+.tile-name{font-size:11px;font-weight:600;color:#1a1a1a;line-height:1.3}
+.tile-sub{font-size:10px;color:#777;margin-top:2px;line-height:1.3}
+/* CARDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.card{background:#ffffff;border:0.5px solid #dde3e6;border-radius:10px;padding:14px;margin-bottom:13px}
+.card-ttl{font-size:12px;font-weight:600;color:#1E3A4A;margin-bottom:11px}
+.tl{display:flex;gap:9px;padding:7px 0;border-bottom:0.5px solid #eef0f2}
+.tl:last-child{border-bottom:none}
+.tl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.tl-text{flex:1;min-width:0;overflow:hidden}
+.tl-title{font-size:12px;font-weight:500;line-height:1.35;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-sub{font-size:11px;color:#777;margin-top:1px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* IDDE LIST */
+.pg-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:13px}
+.pg-title{font-size:15px;font-weight:600;color:#1E3A4A}
+.pg-sub{font-size:11px;color:#777;margin-top:2px}
+.btn-p{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;background:#2B6E7E;color:#ffffff;border:none;font-family:Arial}
+.btn-p:hover{background:#1D5069}
+.btn-s{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;background:#f0f4f5;color:#1E3A4A;border:0.5px solid #dde3e6;font-family:Arial}
+.metric-row{display:grid;gap:10px;margin-bottom:14px}
+.m4{grid-template-columns:repeat(4,1fr)}
+.metric{background:#ffffff;border-radius:8px;padding:11px;border:0.5px solid #dde3e6}
+.metric-lbl{font-size:11px;color:#777;margin-bottom:3px}
+.metric-val{font-size:19px;font-weight:600;color:#1a1a1a}
+.v-ok{color:#1D9E75}.v-warn{color:#BA7517}.v-danger{color:#E24B4A}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 9px;font-size:10px;font-weight:700;color:#777;border-bottom:0.5px solid #dde3e6;text-transform:uppercase;letter-spacing:0.04em;background:#f8f9fa;white-space:nowrap}
+td{padding:8px 9px;border-bottom:0.5px solid #eef0f2;vertical-align:top;line-height:1.35;color:#1a1a1a}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8f9fa}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.b-ok{background:#E1F5EE;color:#0F6E56}.b-warn{background:#FAEEDA;color:#854F0B}
+.b-danger{background:#FCEBEB;color:#A32D2D}.b-gray{background:#f0f2f4;color:#666}
+.b-teal{background:#E0EEF2;color:#1D5069}.b-purple{background:#EEEDFE;color:#3C3489}
+.tab-row{display:flex;border-bottom:0.5px solid #dde3e6;margin-bottom:13px}
+.tab{padding:7px 13px;font-size:12px;cursor:pointer;color:#777;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:Arial;font-weight:500}
+.tab.active{color:#2B6E7E;border-bottom-color:#2B6E7E;font-weight:700}
+.map-box{border-radius:9px;overflow:hidden;border:0.5px solid #dde3e6;height:400px;background:#e8edf0}
+.map-note{font-size:10px;color:#999;margin-top:5px;font-style:italic}
+.leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#666;align-items:center}
+.ld{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;margin-right:3px}
+.search-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;padding:7px 10px;border-radius:6px;border:0.5px solid #c5cdd2;font-size:12px;font-family:Arial}
+.filter-sel{padding:7px 10px;border-radius:6px;border:0.5px solid #c5cdd2;font-size:12px;font-family:Arial;background:#fff}
+.tbl-wrap{overflow-x:auto;max-height:460px;overflow-y:auto}
+.ph{background:#ffffff;border:0.5px dashed #c5cdd2;border-radius:10px;padding:32px;text-align:center;color:#888;margin-bottom:13px;font-size:12px;line-height:1.6}
+/* FORM STYLES */
+.form-wrap{max-width:700px}
+.fh{background:linear-gradient(135deg,#1D5069,#2B6E7E);color:#fff;padding:15px 18px;border-radius:10px;margin-bottom:16px}
+.fh-title{font-size:15px;font-weight:600;margin-bottom:2px;color:#ffffff}
+.fh-sub{font-size:11px;color:rgba(255,255,255,0.75)}
+/* STEP INDICATORS */
+.step-row{display:flex;margin-bottom:18px;position:relative}
+.step-row::before{content:'';position:absolute;top:14px;left:14px;right:14px;height:2px;background:#dde3e6;z-index:0}
+.stp{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;z-index:1}
+.sc{width:28px;height:28px;border-radius:50%;border:2px solid #dde3e6;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#777}
+.sc.active{border-color:#2B6E7E;background:#2B6E7E;color:#fff}
+.sc.done{border-color:#1D9E75;background:#1D9E75;color:#fff}
+.sl{font-size:10px;color:#777;margin-top:4px;text-align:center;line-height:1.3}
+.sl.active{color:#2B6E7E;font-weight:600}
+/* FORM SECTIONS */
+.fsec{background:#ffffff;border:0.5px solid #dde3e6;border-radius:10px;padding:14px;margin-bottom:12px}
+.fsec-title{font-size:12px;font-weight:600;color:#1E3A4A;margin-bottom:10px;padding-bottom:7px;border-bottom:0.5px solid #dde3e6;display:flex;justify-content:space-between;align-items:center}
+.fr{display:grid;gap:10px;margin-bottom:10px}.fr:last-child{margin-bottom:0}
+.f2{grid-template-columns:1fr 1fr}.f3{grid-template-columns:1fr 1fr 1fr}
+.fd{display:flex;flex-direction:column;gap:4px}
+label{font-size:11px;font-weight:600;color:#555}
+.req{color:#E24B4A;margin-left:2px}
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=tel],select,textarea{padding:7px 9px;border-radius:6px;border:0.5px solid #c5cdd2;background:#fff;color:#1a1a1a;font-size:12px;font-family:Arial;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#2B6E7E}
+textarea{resize:vertical;min-height:72px}
+input.gps-ok{background:#F0F7FA;border-color:#2B6E7E;color:#1D5069;font-weight:600}
+/* ALERTS */
+.alert{border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.5;display:flex;gap:8px;align-items:flex-start}
+.a-danger{background:#FCEBEB;border:0.5px solid #F09595;color:#A32D2D}
+.a-warn{background:#FAEEDA;border:0.5px solid #EFC97A;color:#854F0B}
+.a-info{background:#E6F1FB;border:0.5px solid #93C4F0;color:#185FA5}
+.a-ok{background:#E1F5EE;border:0.5px solid #7DD4B3;color:#0F6E56}
+.ai{font-size:14px;flex-shrink:0;margin-top:1px}
+/* CHECKBOX GROUPS */
+.cb-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.cb-item{display:flex;align-items:center;gap:5px;padding:5px 8px;border:0.5px solid #c5cdd2;border-radius:6px;cursor:pointer;font-size:12px;user-select:none;background:#fff}
+.cb-item:hover{border-color:#2B6E7E;background:#F0F7FA}
+.cb-item.checked{border-color:#2B6E7E;background:#E0EEF2;color:#1D5069;font-weight:600}
+.cb-item.checked.d{border-color:#E24B4A;background:#FEF5F5;color:#A32D2D}
+.cb-box{width:12px;height:12px;border-radius:3px;border:1.5px solid #c5cdd2;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.cb-item.checked .cb-box{border-color:#2B6E7E;background:#2B6E7E}
+.cb-item.checked.d .cb-box{border-color:#E24B4A;background:#E24B4A}
+.cb-box::after{content:'✓';font-size:9px;color:#fff;display:none}
+.cb-item.checked .cb-box::after{display:block}
+/* GPS */
+.gps-row{display:flex;gap:9px;align-items:flex-end}
+.gps-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;flex:1}
+.btn-gps{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:6px;border:0.5px solid #2B6E7E;background:#fff;color:#2B6E7E;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial;white-space:nowrap;flex-shrink:0;height:34px}
+.btn-gps:hover{background:#F0F7FA}
+.btn-gps.success{color:#1D9E75;border-color:#1D9E75;background:#E1F5EE}
+.btn-gps.error{color:#A32D2D;border-color:#F09595;background:#FCEBEB}
+.gps-status{font-size:10px;margin-top:3px}
+.gps-status.ok{color:#1D9E75}.gps-status.err{color:#A32D2D}
+/* PARAM TABLE */
+.pt{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+.pt th{text-align:left;padding:5px 7px;font-size:10px;font-weight:700;color:#777;border-bottom:0.5px solid #dde3e6;background:#f8f9fa;text-transform:uppercase;letter-spacing:0.04em}
+.pt td{padding:6px 7px;border-bottom:0.5px solid #eef0f2;vertical-align:middle}
+.pt tr:last-child td{border-bottom:none}
+.pf{font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px}
+.pf-ok{background:#E1F5EE;color:#0F6E56}.pf-danger{background:#FCEBEB;color:#A32D2D}.pf-empty{background:#f0f2f4;color:#777}
+/* DYNAMIC REFERRALS */
+.ref-list{display:flex;flex-direction:column;gap:8px}
+.ref-row{display:grid;grid-template-columns:2fr 1.5fr 1fr auto;gap:8px;align-items:end}
+.btn-rm{width:30px;height:32px;border-radius:6px;border:0.5px solid #dde3e6;background:#f8f9fa;color:#777;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.btn-rm:hover{background:#FCEBEB;color:#A32D2D;border-color:#F09595}
+.btn-add-ref{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:6px;border:0.5px dashed #2B6E7E;background:transparent;color:#2B6E7E;font-size:11px;font-weight:600;cursor:pointer;font-family:Arial;margin-top:8px}
+/* PHOTO UPLOAD */
+.uz{border:1.5px dashed #c5cdd2;border-radius:9px;padding:16px;text-align:center;cursor:pointer;background:#f8f9fa;transition:all 0.15s}
+.uz:hover,.uz.filled{border-color:#2B6E7E;background:#F0F7FA}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;margin-top:9px}
+.photo-thumb{position:relative;border-radius:7px;overflow:hidden;aspect-ratio:1;border:0.5px solid #dde3e6;cursor:zoom-in}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-thumb .ptr{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;z-index:2}
+.photo-thumb .ptn{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.55);color:#fff;font-size:9px;padding:2px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* LIGHTBOX */
+.lb{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center}
+.lb.open{display:flex}
+.lb img{max-width:90vw;max-height:78vh;object-fit:contain;border-radius:4px}
+.lb-cap{color:rgba(255,255,255,0.7);font-size:12px;margin-top:9px}
+.lb-x{position:absolute;top:14px;right:18px;color:#fff;font-size:26px;cursor:pointer;background:none;border:none;line-height:1}
+.lb-nav{display:flex;gap:10px;margin-top:11px;align-items:center}
+.lb-nav button{background:rgba(255,255,255,0.15);color:#fff;border:none;padding:5px 13px;border-radius:6px;cursor:pointer;font-size:12px;font-family:Arial}
+.lb-nav span{color:rgba(255,255,255,0.6);font-size:11px}
+/* COMPLIANCE CLOCK */
+.comp-clock{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}
+.cc{background:#f8f9fa;border-radius:8px;padding:10px;border:0.5px solid #dde3e6}
+.cc-lbl{font-size:10px;color:#777;margin-bottom:3px}
+.cc-val{font-size:13px;font-weight:600;color:#1a1a1a}
+.cc-val.ok{color:#1D9E75}.cc-val.warn{color:#BA7517}.cc-val.danger{color:#E24B4A}
+/* SUMMARY + PDF PREVIEW */
+.sr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid #eef0f2;font-size:12px}
+.sr:last-child{border-bottom:none}
+.sl2{color:#777;font-weight:600}
+.preview-panel{display:none;border:2px solid #2B6E7E;border-radius:10px;overflow:hidden;margin-bottom:14px}
+.preview-panel.visible{display:block}
+.preview-bar{background:#2B6E7E;color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600}
+.btn-save-pdf{background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:5px 13px;border-radius:6px;cursor:pointer;font-size:12px;font-family:Arial;font-weight:600}
+.btn-close-prev{background:rgba(0,0,0,0.2);color:#fff;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Arial}
+.abar{background:#f8f9fa;border:0.5px solid #dde3e6;border-radius:10px;padding:14px;margin-bottom:12px}
+.abar-title{font-size:11px;font-weight:600;color:#777;margin-bottom:9px}
+.abar-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn-gen{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial;border:none;background:#2B6E7E;color:#fff}
+.btn-gen:hover{background:#1D5069}
+.btn-email{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial;border:0.5px solid #2B6E7E;background:#fff;color:#2B6E7E}
+.divider{height:0.5px;background:#eef0f2;margin:11px 0}
+.cite{font-size:10px;color:#aaa;font-family:monospace}
+.ph-lbl{font-size:11px;color:#2B6E7E;font-weight:600;margin-top:5px}
+.qty-row{display:flex;gap:7px}.qty-row input{flex:1}
+.qty-unit{padding:7px 10px;border-radius:6px;border:0.5px solid #c5cdd2;background:#f8f9fa;color:#777;font-size:12px;white-space:nowrap;display:flex;align-items:center}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="position:fixed;inset:0;background:#1D5069;display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#fff;border-radius:14px;padding:40px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAApqUlEQVR42u28d5hlVZn2/Vtr7XRincrV1d3VOdABmtRIbBCaLEEsRkYYRRRGEEcQdUxfUaPjOOg4YgBHZcAZR1+6RxCUKAhNztA0XR3oVNWhcjr57LDW+8cpmmpoJKjzvt/1fXVdp86pOnX22vtez3M/9xN2wf//9Ue/xP/x9Ts6BF1dAtphYH31fJoWG1gNixYZOjsNYP6/ApCgvV0ysEhwPJrOTj35JCafzD6oGCM4/lpFU5dh9Wr9PwnY/wxAHR2Sh5Gs6QwFICcWnt9+ebJrJNdKqFvByiBIEAFCl0CMYkX9s6W/u/uB1eMAe5FZ0WFNBvj/vQB1dEi6FgtWnx9J4IorT3V/sLH1CCKxEmUdiecdYCe85kwqpVKJBJalsKRC64jhbI5sNkelWBqgXN5EFD2JMQ+cOVc9fvdPflLUrx0f+EsCJf5yrrRKsvr8SAHqnE/M97N8DNf9UE1z47xD589m+bzpzKhLM6OhhpTnaMdSpiYRM+OFEoPjedFYkxTD+ZLcNZJlS/8oz2/fw8tbuxns7d9Bxb+NhLlF3fGTdRFA+yrF6vP/Iq735weovV2xenUkgfiZly7MV8QXSCY/fOzBi2OnLZvP++ZMNXHHjjbsHhBTMmmZL1fIlSpizpR6PNfmqQ3dCCGY1lCDZ1tm1+AYRy6aqROuY7oHRuXzO3rlb1/YxKNr14fReO422xbXRXfd+LyetPaf83LUnxWcFR0Wd98Qrbzwc4mtzUu+7sfTN608dvnyf77odPuDhy8KD5oxhZ7BMWlZSm7rG5GLZzSLgfG8GBjLc9i8NrbsGSLu2qxYMptXuvsZL5SFUlK01KZk/1hO7h4eF6ccPF9/4NAF0XGL51llJ7Z4Y9/wx/W0JS3zlx/6zMit/1lgRYdF9xr9fxtAgvZ2Je++IXJP/eSKzUVuX7xs6bnXXXSG/ckTDwvDUIvuwVH1yCtbhZSCtsYMYRghlaSxJkklCJjakMG1Fdv6h9nRP0pNwqMchGSSMRprEvSP5asKIJMU67r7ZLZQ4jOnHRkdNneGtcfn8LXbBj+sZh+0TTz43Q2GDglr/m8ByAi4FtV1vtanXPp5ncz859/91WnNP/zYGWGpEohCxVc9g2OiLhXHsRS7R8ZJeg4zm+uJuzZ1yThSCIp+QDkIUVKitWbhtGbqUwkWTW8h7jls2NmPpSQCwaPrt1ObjGPbShoNFx27LKypq6t9tmfwgqBloae2f/cB8xqJr1lj/g9yUIeETmNWrZLi337/06a5cy7+zoWn6bTn0DeWl401CcJQE3NtcqUKTTVJZjTXsXFnP6/uGeCJjdvZuHuQkXyRfMUnMgZLSRwlEQaaapLMaqrnyIUzmd/ahKUUWmt6R7M4lkUm4fH0ph4OmzeNQ2ZP0y/39Jkv3/p79eq6rt9cOst85Cc/+UmRjg75p0Q58adZDqzquNY+/4ne1UsPXXbWzy47N8jlS9ae0ayoTcYYyZUIowg/jDh8fhvPbu7ml2ue4+XuXqSlmNfWzMK2Ftqa6qhPJ4i5DgClSsBYvkj3wAibd/bxak8/lYrP0rYpfOioZZx8yAHsGR6nq6cPbQynH76IB17ajKMUB7S1BF/41f32E48/89gxDeKsx3554+ifApJ4z8B2dIjnWnvVYf9tfnPkMe87/R/OOyEYy5VsjcFWkrpUnJ6BUY5bOpdfP76Wm+57nO1Doxx90HxOPWIxS2a2kk7EAIi0JtIarav6WUqJmngA5EsVNvb0cd+z63nkhU3UxTz+9vRjOH35ErbuGcQY2LCznwNntdJalybpOcGVP7/H/v1Djz1z1tTUSXf++3V5uFbAuwdJvCdwVnQo9UhnGL3/klsPOfKI8//rivOCJzfusGc219GcSfHgS68Sc2xa6tJ897YHeHrzDs5acSjt7z+M1voMlSCg7AeEkX79JKSFrIwjdEQUqwMd7hU1Sko8x8ZzbAbH89zxyAvc+vtnWDi1kWsvPJN8ySdXKrN05hRc2wIMcccJLr/lLvvBBx978LkPmdMOe2BUv5c0Rb2XUC7XdIb6pI//07xlB19289+eG8Rsy97eP0Lcddg9NM7h82ewrX+IK370KzK1Kb716fM5ZfniCWsoE4QaIQRy4iEALAc7348K8uhUM1JHSCmRorqHfhhRrPg4luJ9S+ZwyvuW8vL2PXx31f3MndrMorYpJGMuCNDGoLVRHzh4fvB0f27utff0zFB3/eI28x4kwLsDqH2VEnd/OhInXXx+pm329bdc8aGgIRmzixWf+lSCl3fsoT6V5NZHn+cb/+seLj9/JVd9eCW2VOSKZQwgpUBMuM4+qanlYo/tQFZyhJmZiMgH8bqBiwmwNFAs+XiOzalHLmVKUy3f+tW9aK05+ZCFhGFVJ2pjEEKok5bMDu7f2n/IWLJ1TD58/ZOmfZWia7X58wPU0SG54dOmeeUnZhWSNfd895Pn2YfObFHjpYqQQuLYkkPntnH9bx/m1sde5Aefu4jjD17ASLaANlVeEQIQElnOYpQ9CQCDsWI4gxuRlSx+0yJEWNkHIFnJYmwPMQGy1ppiyWfRzFZOOOwAvn/7H3h2cw/nHHkgkdaYCQhqEzG5pK1F37l2y8nxKbPv8X/3td20tyu6ut4RSPIdA9S1WCiB6TfiZx8788TUqQfOMSOFsrCUxBhDOh7jsz+7jd8938UtX7uEBW3NDI/nUVIiJgMhFTIoYI9sw1geQvsof3SCg3KoUvW1CsYQURljeVhjPcjSGEbavHblQgiUkozmikypS/MfX/skm/uHuOyGVcRdF0tJBscLdA+OiaPnT+fvzjvZysr4LZ++8kr33fCvfKeuJVefH0XHfvTS+Qctff9VpywP85VA2ZYijDT16QT/fNsfuPeljdz85Y/TkE6SLZSxlHwTv4vIp5JqxepbhyyPE0kXq9gDGEQlhyyPg5DYhR4QChFV8HY/R5RuRUTBPlYFYClJoezj2oqb/v5jbNjTzxduuZOmmhQ9A6Nki2XGimX1ieOWhcuPWr74B69kvyBXr45oXyX/TAB1SFavN81nXtAgMpl/+vuzV+i4a8vugVGKZZ+GdIJfP/EyP/n9E9z4uQupT8fJlyr7AWcvRKS8JLFkPclX7yGWasYt9yP9UWRQQlTyyCCHVdxFmGgmtvUPRNIiitWC2T+/Kikp+wG2Uvz4mou4d+0mvnfnGk45dCFtTbWU/ZDIGPXls46N3KaWLyVP+Js5rD5f7y2X/EkAtS8Wik7dm3W/fNrxR9Ydf8AMnSv7cmvvEAbYPjDCF//zt3RefDZzWxvJFfcHTlXfGAxOlCdpQuKzjibd/RiJfD/CcnBymxFBBRmUsQvbgRAVVEhs/B1m5lHVqBYVkJiJgpt5E0ilSnXD/uXydq77zUM8vmE7ccdGCMhXfLGsrZm/WnlsLGusbyow1VLvn0LSE8TsHn1RmzV1ys3f/psPqKRnSz+KxJyWBmqTcT56/S85fMlsLjntKIayhTeDYzQop+ouSESpj9LYFgYaD8fe/Qz+nleoTD+I2PjLiJEcws9DRiLjraS2PEWyMkzT0ZeSGXqWpCnixJqxlSSQFjryQby+npSCUsVn3rQmImO44XeP8pHjDsUYgwD8KJIHTKnXd7yyfVFQ03pndPetfZ1vQ9jybYkZTNmSV5953PL4kmmNuugHwhhD0nO5+cGn6c8VuOq8ExnJFVD74RyMwe5biygMEAmJn5yHW9hKcudvyS69gHTXr1Hjwzj9a3EGXsYe20Fs52MEgcB67t/pXXoRO3Y+yUjfk+yMzadPeowVxpC7n0foaD+cpBjOFrjktKPxYi7f++0a6pLxichmOGBqk77gxCNlIGJfssBA+3u2IEHXap08/Jx60zr9pq9fcJqXjjkyjIxwLMVovsRnbrqdL/z1qcxsqafsB3tF3T6upWyUHaN28724tkNQ04pKz6Oh+7/QU47Cyo8SX38HavcOrOxuZHkMNdCPu+Npwrq5VBYcTWrD9xhadA2RkybZdRuxnsepTDuCyKtBmOhNAclMuNwBM6bw7f9+gBOXzqelNs3OwTHWdfeK5bOncscrWxboWPOv9P2dw38s61d/TDGr7jW6POuwS0444egPfvL9h0TjpYoCqEsmuO72PxBI+PQ5KxjLFyfyJjMRhqsPDaQkNCZq8KYspi6epqHYR7Pj4s49j3R+C7FkE3a8lmhkBzooIZQNCGRhiDDVQLz0B8aXfB5R1tTffRUiKJI74lNEXma/Ue01CVD2Q2a3NvDq7gGe29zNSUvn8/yWXbi2JcIoiowbs198ZUtB9ax90HC8eiuF/dYAfex49Jo1dB604kdXnHXClLRjk4p7UiAYGM/Tuep+Pn/BydSmEoRhiEAglI2wvOqzslDKxTeCMb/MiFYMWinK3U8j7vwMo8M9jA5ugPv/kUrvRvALCCFfJ3QvjVcewZ++EtO3m4Z7r6G86AOMHv9VMAIRVfYLzusgQRQZ5k9r4mf3PMHclgam1KY5ZO50LClpyaTEr59f3zZ7VubGkQdvCt9KF1lvRc6is1OLZeceNHvWtENbEh4PrH1VHbt4DvNaG/jxfU8wc2oDy+ZMZTRfwrLjgCEs9BKM7SAsDWKCIkK5eC2H4SXqUYVuolKM7PzTKMdbqb/7apJ+DuPVT3ITgdEBKtVE/MDzsGccQTKKCHtfQV9yL6ZhDnpoE+XSAJHbgHbq3zL3FEJQDgLmtDaybP507n6+i8tPPYaxQonuwVE5ta5GH7ho3oy1D/aukHC/fot69v4BehgpQUeJ5LlHLz1ALJ7eHNanE1ZXTx9CwP0vbeLiM49BCxepQvyRjZT2PIM/thUdFCcITGLQlPteID7tKFLpRmLjj5HZ9lOizBwqx12AWnMzRCEIgZhwTSEtdHGU/NM3w3P/idQR5eM+hj/8MHr9dzCxJsS0MyDWAjoEHe0Tyd4IUsn3+eCxB/ONn9+FUpInuraTScaYWl+jTzhwgVj75AsfEnA/A4vehQU9fG1kRCfU1pxyzIIZbOkdEg2ZJGcdsZg7n3kFHzhyyTxGdr1AcdfjBOPbwBiEcpF2Yt9aioko9Kyh4NQgnBReIEn030edyKIIEGEIUqCFxAiJEQIMyKiC8IsUkrWM9PyeHHECmcBUKqjwKby6IbyGRSivDh2WwbwZKCkExUrA0lmt1GWS3PH0Ok48cD6HzJlKJQjlUXOnix/Upk9asGiR07Wm0584ZfM2AHVIIYTWs09qa21tXpZQgqFsUW7eM4Tvhzy4bguHL2xDb7+d4S1PYCkLYbkTIV3vR+0KhBWDsAhBjqKwyceWMGgC0lOHSRTHiVXyuJUirl/CigIwhpKXoq9pNmPpJiIsJAaBhiBPOLye3NA6ij0PE2tdTnzq0QgrhglLE7z0ujEYY7CU4uglc3hx004uOv4wHl2/nZ1Do/LAma1m3sypM7u2zl0s6XpRd3SIiVmAPwLQCqRcg45qG5YvnNnmzW2pix5dv11ZE1XCtd29XLx0kLFdo1hOono+5m3mC4yu7q5QSAxKlzEIsskGxlNNYDSWDvH8Ak65hEQznmzAt12sKMTCx7x20UJWAwECExTJb7uPyuArJOecjlO3EBOV93G7qhX5HLloNvc/vZ6NuwboG81Rn0qgpIwOnDvb2vjkS0cLeJGHkRMd7rdxMYC4976ls6ZSm4yb2VPqycQ9XtzRT1geYlZiHN84Vbn/rupzZuJ79WKVDjEGpDD4xqZgN2J5EUpoVBRhhwFGiNfBed0sqscSCmknCAv9jL18M7HWI0jMXIlykuigVF1JCPwgZGZLPfGYy+Y9A5x6yAHEXJvaRIzF01sgGX8f8MPqVMnbKenj0QYgnTh4VmMtT2zYIXb0jQCG7UNZGt08NTGLSP/pXV6NRElDSbvkQo+4KOHqMlYYVEO9EG8PuNFI5WCkS37Xk2Rf+hGlgbUIZVf5UFQ7IZ6tmN3aQM/QKLlShS17BhnJFeS8llpEMn5QCILV50dvB5AQnZ1aM9dNZmrmelJSn46Lc45aSu9ojhe37WJ+ffR6+jmhC827siGx99mRAcXIpb9cQ61dQGAwyHcAzBsNyiDR5GlgJFch3/ULRtf+jOLORzBBHmm5aOmyePZ0Xu0doi4VZ8OuAX73bJfIuA4NtTUzxNxjGsSkbs3+AeroqL45e2ZzTSLWsnhaI70jWXHPsxvwbJv+0RHaagx+aFBSYFkSy5IoKSYVxSZ5wX7AcWSIRmDLkD3lOtaPT2dqbAQpDPpPbNPV2eOUdYKcqUNnt5J99Q5GXvw3xtbdzMimO5lRZzFcKOEHIXHX4aSDF4jZzbWmIZNOEWucLgDaz5dvzUFdXVXOTaRaG2trnLTnmJpETMQdm/qaJEOjwxTlMOuKIKQi5ll4ro3nKhzbwrIUUlb1hxACUy2e74XHkwHdxUYiI9FG8OLoLI5r2kBcVShHzoRbvfNWy+RNEBhCo6hzs/SVMiRiCZRtMH6eoDzK+OhmHJEg9OvYPjDGoXOmkitW8CxLT2tuUBtca5qAF95GB7UjWA1StLTU19E9MKp3DY+rk5fNZ9donko5h2NCSmXQJiSXL+9T/rQtiVJVq0rEHJIJl5hno5TAIHlxfBa9pRrmpft4cnghB2Z2UIo8hoM0abtUjUwIjNZo83omsReISeDJN1qt0QSRpBQ4SAzlSJGwKhihkJaFAZIiREYFKpFhe98wfWN5ls6YYppqMyCsqQBvFIz7AvTajKDjNmSScfwwNMWyz4tbd2GUg9QVPBtCLVATBXgDKCIiY6j44d6LGRsvIaXAdSxcR1LUcQYqe2ixX2Zg3GOGGsOrRBSiFKPlDON+M0uTW8BExOMOtqUwk5ARoso1BtCRoVgKKJZ8ikUfy1JkUja+XYuWDkIKLKknONIgMGgDjiuJKZ9syac17SCEwLEV9akE2FbjO1fStqxNeC5LZ0ypNuxsxdpdw1gEWAKCSTYuhWHYT5O2iigZYSY4TohqMb/ih5QqICnTJAcJyxYu48SCXsZLVtXipMAObLYM+oDBdS2SCYcoNGhT7aF5rk1N2mN0JE+u4FMJDFpHe7ltYMiAXaKxxsbEGskLh3q3gqVstDYYbZACErZhz0iW4w84gMaaFG2NGRLbesGya98FQLZrqeokRsJzsCSM5kvYQld3csIZLBGxPjuTtFUgbRUJtUKJauJpJnUfLAEGixBr4vOKEJDSYAz4ocGV5b3FVN8PGSoHEy5VjW3GlBgazjJYSlPj+MSskFBae0uvxggIivQPGKTKIZXFHiGJeRbTmmO4nofA4ChNEEW8unuQ3rE8fhjhOTZY0nnnAEVhwrUtegbH2No3xNTaFKE2SDERZwxYMmJXqZHRIMnC1E425aYxL7kH8RYU+0a5J17XjRNcI1+fdhUCae371xLDqJ/EsWBzoY1Z8T6SdgltBHuTCyFRVrWKaSIfX1vsGvfoGyszd2pIZmoC1xJki2VqEjFmtzZSl4zz0p5hECL2zgEyMhIIls1qJRlzqE3EGSr20F9O8/hwE5XIIDHkwhi2DHly5ACKkctokPyLzoT62sZTPtkgTn85Q9Iqv1llv2FTAmMRFQVrxwKadjqs6y1wwGILJRWWksRdu6qMpYjeOUBSFiphQK5UZlpDhj1D4ziWxNcWY34CX1ctSQmNr23KkYMSmvEg8RcFSApDaWItg2Bs73pmUrQze0m9GuUMaENkLMqjktGSpD4do1Dxee75nZx2yEIirSGMKu8coMAv+0GEFJKfP/gsK5fNpzYZRwhQUmNPlFbNxC5ZovraEn/ZseXqGmavcrdEtWivLAulFMq2q3joiDAICCoVhFS4cQ+pJOlkgi2VgJhd5cLRfIktvcNUwgiCqPguOEiPZIslgiiirbGWMNJYUuI4DtK2UZEmDII3pKD/M+Pv5o1pi4EwCAmDCBVGSKkwOiLSGi+ewEvE8WIxHNfDsS3UrkGUECghOffIpcybUs/vN/WACUffHqCmif6QCQb6R8aY0VQnGmoSrN3eS8K1cWyLQqmMLd6cXZs3dE/fc9Zg0K8fxPBHC89QHZFR1eHz19jajcWQSmE5DslUuqrQjaHiBxigPpUgV66wZyxL3LEZyxchCAbekQUZgGLYO5LNsmc0Kx9+eQuubbHy4PnEPZdKpYRjW9iuW50EsywEoI0mqPjVLF1rdBRNEnrvgmdsWwLoKKpKAq3fMs9QloXtuWAg8KsTJIlUCsfzMFojlcJMFPBeGxS1LcnU+hpe2dHHnpFxjpjXJvpGxqAc7NrHSPYL0OpV2iCgPLBneCyXH8oVk5mEZ0byJTE4lmdaQ4ahIairS1MsVyjmc9WyjBBIKScy/Opu7ZXUk63LvJ4/VJ/EvpajlAxL+ecRwlGWPdtoHSCsjNGRQQixT2ohBEEQEAQBsUSCdG0ttm3jeB5CSgLfr7aiJnJCJSXZUpnGdIIgiDhw1hTmtTYwlCuqweERQ1TuMVC9w+ityx3V0jnbnhwaGMvuMlJxyiELzIkHzQNgRmMthUiTSCaxbBvLtvcmpWEQVK1G632ySKkUlm1juy5uPI7tOFi2jZRqb6nCaA1CEEskTG1zs9PaWHdr0pROsqX4RrKunmRNOnRjMZRS+xTkvViM2oYGEqkUiVQKLx6fSMs0tm1XB7UmNktJwXC+yLT6DJE2jBVKtNaljRGSPcNjgwwUdhrg7Uuu7auUWn1+FOUKmzb1Di9cNr1R25aSu4bHmdlYy71+UPXtdJpEKjUR9HxyY2OUi8V9EkipFI7rTHQ6FXoCDINByKowrJZNbGKJhEzVpFG2s1Ra1lKpC3+wipUtRgmKBd8OfN8YI4SZAMBxXdx4DGVZxJPJva49uUb0xkbZWLHEjIbZZItltvQOMTRe0LYXU7lcfpsYXJM3xgiqS/yRiuJrCWux8Ozm3kG6+0d58KXNeI7FUQtmYYB8uYKlFJZl7dUarhfDsi3kJLMOg4BiLk8plyc/Pk4Uhtiui+24SKWIJRLUNTZR19RIMlOHFg6VUOpyoMzOqZ/pffCG79wRjeW/K9zMrlgyJWxbIU2k07W11DU1kUimcD3vbblOCEElCCkHAYfPnc7sljret3AGU+trzIbeQcjmX5QAx1+r3j7MN3VVlysUn3pxSzefOv4Q+f6D5pHwHAQwvaGG3rEcc5vrqQQhUkpi8QSO62G7DkGlQiGXAyUn9EkVRNt1iSeT+JUKoR8QSh/H8/ASCUIcZDiOFeWwo6x0wxGzoO+aq0+9uHaGFVw/NfRjjxWt2rmZoHvp7ubz3P7MQTi6uLfA9scAMoCtJH3jOTKJGIfNnV4dVrcVrmWJHzzwDJSKT7zV598M0OrV1RKXHnp+w46ekbGKX9eSiplcqSyaalIcs3AWq554mQVTGvcx5ygMq2ItHsdxXcIwqCae5Qq2Y5NIp1BCIWMSmUhULc8YNJI5vTdSn30KpUsoDUIjbJcrjaj2FZEc6vjpgcFs8iujzW1n2lKviCJj3tF8kzHYSrFjcJQjF7SRiccYzOVxLcsU/VCt3bQ1ID/2pJ6ox7/xFg9rv4fs6JCqs3Os1HzAU89u6z3t/OULdcEPVMkPOHnZAn7+8HPkyhVs9XrNxnHdvbqkkMtRKhRRlrU3zJpIY2xVzc73EjNUKgHl/DhjUR2+ShJacUIrhVapMHLrReQ1itCpN5HX0JStuF8l9MNYUBZvp4/2ca8wZDif59SDFxJE1ZQr4Tr6mR09amBg6GWz/t5toso/+h23ngFNIXfnQ+u3nn7+8oVGCkHJD1g8vYXF01vY2j/EQW2tlPxgbyQDiKIIy3FoaG6uEnE1KXpTdBNSEoYBJgronnHVxIivQAgFUiKlsqr0phFohA5MIiYyCIcoDN5xMd+1LbYODDO9PsMR82ZQqPgIBLYlzZquHTCevcsCw/HXWkD4zgaojqcaD4LiXU+t6yp1D41brmUZrQ1SCs4/ahnbBkeIqrPI+ykn2Qj1hjD+xpaP1tUTtW1EVCIsZzGVLDLK4VLE1jmsMIsVFZC6jCASURiaKPDflfqUQrJxzwDnHrGUhOcQRhrbkgyMF9RDL75iKJdu1/sRiPsC1L5KTQw0iokZYmE6OqR65vZd2d7Bhx/a2EMq5kaR0WSLZU45eAFTalO82jeEa1vV8G1eawqaarh97edJVmMmiUYdRQSBTxAECCFxvBhuLI6yHLQRE+0fhd5bSRIYIYSZpC7ffOzX19TG4FgWPcOjeI7ig+9bSrZURhtN0nOjJ7buEXt6dr+0aibrzGutnvZ2NXEfiqR9lXp9Pqhrtdk7YdXVZSZm9pTo7tYmM7NnyPEu/tDyxSYd80wQGdIxl6aapP7loy+Iuc0NKCmNZalIayOUVNpW0hhT7W7ZltLVsA+urSJhEAZwbMt4nhdJyxa2bWvbUqbaKhSTPmNwbCt6jbcsIbAtFUXGCCmlsZXUk9cRorqubSktJxoJj23axlVnroiOO2C2qASRySQ8bUtp/vGONbLn5Vc+e9v9q14xKx62uPvuaO+s4po15rVpfKE++NmNCPWoKuevS4329o3VT19hXO9qhJiGYczxyz8sa/GV71x50fxsscztjz5PEIYcfdAB3P/CeuKWRVtTIxt6B8jlsjiux4zGBlqSHtrArmyR3YNDRGFAbW0ts+szxC1JPojYOjTK+Pg4tuPQ1tjAlGS1qLcnX2LnwBBB4JOpqWF2Qy0pW1EII7YNjTMyNopl20xrbGBqKoYUgr5Cme6BIfxKmVQqzcKWRobGx9kxPMZphy3lpU1bsZXirGMOYVZjLZd+75YBUSp9Q8cTH0FQh9G7RaXyL9HwzjVOTdOUKJ7+AkYfK9QZV5yC63zUSLUCCIRBGx3+TOryo1o6S5HWpxCyDamUHh+7l5GhG9HkSWc+rJoaPmIMGYzeqXPZG/FLj6DsGSTSfxdLxA43hqicy/+Bcu5HRNEwXvwclcp81LPtxlKl0qfz2Z9SCe4D00oqdWUskTgaMKVi4THyuR9gdC+2c7pMZy6JOU5LOQgHo9z4LYSFOwhVPan05V4icaIQqFKh8CyF7PfQphvLOV7WZP5WCDHdGDOmh0Z+wdjwKqRIUt90mZWpPS0KAwR6Oya6QfrBOu24xyPkJROk6ggdPUzk/3yvP8fO+nirdGvqD1v9rxsegXBSK4rEBz+9MMznC8H9t+yczGT65PY6J97U4L/4ux7Z3V3We+fEQB974SwsreVDv+ye/Jn0irMz4zQ01JV2D4w9c2928jr6xItnExa1XHPrjn3qTAeuTNA0tbXG9Ydyd/1ydJ91TvjrGYRSikd/sX3ycI+ZscJzliycXhf5Y4P33jxoJqXG0Ypzp7m1ja7/m59snbzOokWLnC1zT5xr54vDxT/c1G/2ElNHh7Xfku4EUe0zNz0pZ9v/4Hm72u+89Xu9P21/57Zi39+96aCXXmr/kXPgnb/XIUW1WS/MaR03nCkta0o+9H9VU47m7R71Xnn+J5cFp//9vx6RaGydV84ODv2289P3fuBL32t2HLv5151XrDvjGze2huPZ5H3f/uKmc752w6E66Wy+84ufyJ3T8f3lO3tfebG1cck0iQoda6C/EjUvdpV+NdBywW++/tBLZ3x1xbl2KlUO8wVXl/KPq1TqCMeNZwojvQ8q5WXiU6Yuze/pfv6eb12zGRArLu2or587Z0UpN5695+tX/v6czh8faSdrZg307HhizfVf2rHi8o5kbdu8C4Lc6Kt3/eOVDwMce/XXpze1zjmrPDq8vu/eWx6fctYnT5XK9QbWvvy7pxalK2eTSUvis2/vvOyF9o6f1hX9sda7nHwXnZ2c+eXvLusd2rhOgjCn/z8/vMp2vG8RRifW6miBjnnfTLKnBgDX+7bW0TFIey6Att3P+sp5EDAKtdyrbV4DSF/Jf1C48wBC4XylpX7RAuN6HaFjfTEX1B0SKS7LBWZl6DhPr7zQ9ZRtv89o/kO59lEqkThKI7+FtBbYODUyFvsHHekzpJf8+anXXD8HMHZNZmUU6q9YTuwrZ3b84K+N5X7RSHVysrbu56dfc11Lsrn1DoQ+WcZiN5zRccOHz/n7H9TXZJr/YDSHYtlnNZ50wRKQ31aWOrdh8YIf09mpK8a+ILDks4AgEWtTqYY1dHaaMzt/doRxE78f7+mRsr2jwxHSPi8qjJ5yV+enPmxnpnQJjCE5YXpCjkvHe6YynrujWmuJMoFffvyMr35vHsidQll1p3z5+5/WYbRbouVE+vOQsZ3TdBimdRTWC0utxPCkkWKuLlfucWccefSdHZddE5SKT93x1U9+Dun0K8vuKRVGH/ntdVevN0aYwU3r/kVIOWxcOb1aaZQxv5D9XzqIbkY67xewOzvQ8y1jdEG7sQuBwd988W/ag0rlo8ZwXsWWVxpt/mPr47deXRkb+KlQUulIv1gaH/mWkGoegNBydlSu/O60r33/KOXIXqXsxClf/v6VRodXGmOKTipl5M5sWoEJ73r8zn6A9qvbfYPRa77bOURnpxYIpUP/iCAoTT/pi99rU457jJesqdGWdzJBGC9nR26SSh1pOc77I+GMAgSR/xBwodHRJrTZBfLs0K9stm33HCeZso3rnD2Rbrgf7bjZk1obI2jSQXQ0IIVShYZ5S+7XUTR034S7mCgadNO1l0tbXWKC0j8bRGOqqe1xTPQQQnQJYwpVhV7qE0IYjGkMK5X1jXOPfL9XN+U3QTmokbZ1kJvKPBYF/lcOvfTfbGVbp7rJtIu0z46KhZT2Kzcry75IICwTRQ/UtSyrkU/96+dKQoiuD6z8m9VndPz4s7/6yg8PQlr1H75+9RXnffWHi42JHB0FL6TrmnA89xNI+YpQ8naJWBlhZirHKZmw+HU3WTPHROUI4H41vE4oa7FBvCqUvVNadpNAzDdQlkrdIdBHrLj6Ow2Au4MdobGImyAsJmrrnzi748Y2E0VeYXDXZwSi9fRrftgycTdPU+iXHvzt1z5x3F3f+OyrQgpRHOm/VEjrOF0YfMoIcczZ37z5s45b8+9am5eEDn5que53kg0tcWNMr5BqOsY85pfznSBPaG4KzhVS9Eul7pCI5eUgXCxty5hK8eM6CjuEFFPJ9yHp6JBDr2z8HEa/qmz7kCgo9gnDf2lhLfajsFWY6GbHiy/T0iwXob+pMND32ds/f+H3Ccqrhe93R5XKQ/f+0+e7yiMDlwRlyoCgs1ObqHyZFYQPiKh0D37lamP0UFQeu/K2L3zkRl0pX+8IkzJB+d8GQZL1u6SUz2DEORaiwfiV1aOF3F2R7/+HtkrTAcKwslaX8rdVg1iHpYPib+/5+pW3mci/R1t4plA8RyrrcKP1I8VH+q+7+5tXvaQj//PStj9gdPDrcmH0QR1WHjKj0Q+F9ntFFMqwMH75bV/4yI069G8UfnlUh/499/zz59bd/Y0rNmjfv7VkVwrvqTPzpgT1jWF1RcdbDofOvfJ6910vOFk6vBOp8Vahfj8hvX3Vvsdob1+l9lmv/qizUkwSXq+9bvrwl5o7QIpJ7wmgcUV7subsj2bEm298InXOFfWv5XeT329eeWEidc4V9W/8V1wCSJ98Vd2iRYucN66/aNEiJ9l+ZaPYj96pOeNTtc0rL0y8cZ1TT73Sbb7wc02T//61R80Zn6qtP+vjb7pWgGT7lxrf+DsB1C3/SFqoD161zQixQQSl71h+1BN4sZOxrMsQMokxgdT6Fyoo36qVqdHK+zsj1NHV9FpvFWHlO1aoXw1s91iU+gxSZDAmElH03yoq/9xExtNe4lNGiJMQQqJNj4j8f7WKxfVBMnYo0v0sQjQBWmhzpyrkb8KByE580kh5JiDRpp/I/55drjwfeu4SYzmfq+aJRgttHpBB6QahZDmS9seNVB9ECEUUjaOj6+1y+bEw5s4zwv48Ss5Ca4ThUWkq1ws/zGk3/ldaqo8ghI2JCoTBj+0gvC+0ZJux3GuEMYuEfdqlS7UXv9RIdZEQwjJG9xEF37Sj4iOhii820ukQggWAxpi7pQ6vE0S5SFqfNNK6WCA8jB41OviWHRbvC6U3x1huh0AcZDAGYx6S2v+mDMKhyPE+YqR1uRAibjDjUuvvhkHlDkupqdpyvia0OQohtRHmSRn631BRtDuy3XO1lFcJRBooCB39SFaKv9KWbNTK+ypCHQdaAGtFWOm0tNkaWPJ0pHuNQNQZYcoi0jepqPTvWou0dmNfEIhTAWkMm4T2O62ouF7LxIrIsr8kEC0GEwoT/VxWyj/930Pf32XBglFyAAAAAElFTkSuQmCC" alt="CWP Logo" style="width:80px;height:80px;object-fit:contain;margin-bottom:16px"/>
+    <div style="font-size:18px;font-weight:700;color:#1D5069;margin-bottom:4px">Lake County Clean Water Program</div>
+    <div style="font-size:12px;color:#777;margin-bottom:24px">MS4 Compliance Platform · Authorized staff only</div>
+    <input type="password" id="login-pw" placeholder="Enter access password"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid #dde3e6;font-size:14px;margin-bottom:12px;font-family:Arial;text-align:center"
+      onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()"
+      style="width:100%;padding:11px;border-radius:8px;background:#2B6E7E;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:Arial">
+      Sign in
+    </button>
+    <div id="login-err" style="color:#E24B4A;font-size:12px;margin-top:10px;display:none">Incorrect password. Please try again.</div>
+    <div style="font-size:10px;color:#bbb;margin-top:20px">Lakeport · Clearlake · County of Lake<br>Permit WQ 2013-0001-DWQ</div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb" onclick="lbBg(event)">
+  <button class="lb-x" onclick="closeLB()">×</button>
+  <img id="lb-img" src="" alt=""/>
+  <div class="lb-cap" id="lb-cap"></div>
+  <div class="lb-nav">
+    <button onclick="lbNav(-1)">← Prev</button>
+    <span id="lb-ctr"></span>
+    <button onclick="lbNav(1)">Next →</button>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <img src="data:image/png;base64,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" alt="CWP" style="width:40px;height:40px;object-fit:contain;border-radius:50%;flex-shrink:0"/>
+  <div style="display:flex;flex-direction:column">
+    <div class="app-name">Lake County Clean Water Program</div>
+    <div class="app-sub">MS4 Permit WQ 2013-0001-DWQ &nbsp;·&nbsp; Lakeport · Clearlake · County of Lake</div>
+  </div>
+  <div class="jur-row">
+    <span class="jur-label">Jurisdiction:</span>
+    <select class="jur-sel" id="jurSel" onchange="switchJur(this.value)">
+      <option value="all">Regional (all)</option>
+      <option value="lakeport">City of Lakeport</option>
+      <option value="clearlake">City of Clearlake</option>
+      <option value="county">Lake County</option>
+    </select>
+    <span class="jur-badge" id="jurBadge">Regional</span>
+  </div>
+</div>
+
+<div class="body">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="nav-section">Overview</div>
+  <button class="nav-btn active" onclick="nav('home',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Home</button>
+  <div class="nav-section">Core Programs</div>
+  <button class="nav-btn" onclick="nav('idde',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg>Illicit Discharge</button>
+  <button class="nav-btn" onclick="nav('construction',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="8" width="14" height="6" rx="1"/><path d="M4 8V5l4-3 4 3v3"/></svg>Construction</button>
+  <button class="nav-btn" onclick="nav('industrial',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="12" height="8" rx="1"/><path d="M5 6V4h6v2"/></svg>Industrial / Commercial</button>
+  <button class="nav-btn" onclick="nav('postconstruction',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12 C4 8 8 6 14 8"/><circle cx="14" cy="8" r="2"/></svg>Post-Construction</button>
+  <button class="nav-btn" onclick="nav('muni',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M4 7V5a4 4 0 018 0v2"/></svg>Municipal Maintenance</button>
+  <button class="nav-btn" onclick="nav('outreach',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-5 5-5"/><circle cx="11" cy="7" r="2"/></svg>Public Ed &amp; Outreach</button>
+  <div class="nav-section">Specialized</div>
+  <button class="nav-btn" onclick="nav('trash',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,4 14,4"/><path d="M6 4V2h4v2"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg>Trash Compliance</button>
+  <button class="nav-btn" onclick="nav('sbmp',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="5,8 7,10 11,6"/></svg>sBMP / SCM</button>
+  <button class="nav-btn" onclick="nav('wqm',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12 Q5 6 8 8 Q11 10 14 4"/></svg>Water Quality</button>
+  <div class="nav-section">Infrastructure</div>
+  <button class="nav-btn" onclick="nav('assets',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="8" width="5" height="6" rx="1"/><rect x="9" y="5" width="5" height="9" rx="1"/><rect x="5" y="2" width="6" height="3" rx="1"/></svg>Asset Lifecycle</button>
+  <div class="nav-section">Reporting</div>
+  <button class="nav-btn" onclick="nav('impact',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,12 6,7 10,9 14,3"/></svg>Program Impact</button>
+  <button class="nav-btn" onclick="nav('annual',this)">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l4 4v9H3z"/><polyline points="10,2 10,6 14,6"/></svg>Annual Reporting</button>
+</div>
+
+<div class="main">
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="hero-title" id="hero-title">Lake County Clean Water Program</div>
+        <div class="hero-sub">MS4 Permit WQ 2013-0001-DWQ &nbsp;·&nbsp; FY 2025–2026 &nbsp;·&nbsp; Annual report due <strong>October 15, 2026</strong></div>
+      </div>
+      <div class="hero-date" id="hero-date"></div>
+    </div>
+    <div class="hm-grid">
+      <div class="hm"><div class="hm-val ok" id="hm-of">586</div><div class="hm-lbl">Outfalls inventoried</div></div>
+      <div class="hm"><div class="hm-val warn" id="hm-inc">83</div><div class="hm-lbl">IDDE incidents on record</div></div>
+      <div class="hm"><div class="hm-val danger" id="hm-open">—</div><div class="hm-lbl">Open investigations</div></div>
+      <div class="hm"><div class="hm-val ok" id="hm-days">—</div><div class="hm-lbl">Days to annual report</div></div>
+    </div>
+  </div>
+  <div class="section-lbl">Program modules</div>
+  <div class="tile-grid">
+    <div class="tile feat" onclick="nav('annual',nb('annual'))"><div class="tile-icon" style="background:#FEF3E2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#E8941A" stroke-width="1.5"><path d="M3 2h7l4 4v9H3z"/><polyline points="10,2 10,6 14,6"/></svg></div><div class="tile-name">Annual Reporting</div><div class="tile-sub">Due Oct 15, 2026</div></div>
+    <div class="tile feat" onclick="nav('impact',nb('impact'))"><div class="tile-icon" style="background:#FEF3E2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#E8941A" stroke-width="1.5"><polyline points="2,12 6,7 10,9 14,3"/></svg></div><div class="tile-name">Program Impact</div><div class="tile-sub">Pollutant tracking</div></div>
+    <div class="tile" onclick="nav('idde',nb('idde'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/></svg></div><div class="tile-name">Illicit Discharge</div><div class="tile-sub" id="mod-idde-ct">83 incidents</div></div>
+    <div class="tile" onclick="nav('construction',nb('construction'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><rect x="1" y="8" width="14" height="6" rx="1"/><path d="M4 8V5l4-3 4 3v3"/></svg></div><div class="tile-name">Construction</div><div class="tile-sub">Site runoff control</div></div>
+    <div class="tile" onclick="nav('industrial',nb('industrial'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><rect x="2" y="6" width="12" height="8" rx="1"/><path d="M5 6V4h6v2"/></svg></div><div class="tile-name">Industrial / Commercial</div><div class="tile-sub">Facility inspections</div></div>
+    <div class="tile" onclick="nav('postconstruction',nb('postconstruction'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><path d="M2 12 C4 8 8 6 14 8"/><circle cx="14" cy="8" r="2"/></svg></div><div class="tile-name">Post-Construction</div><div class="tile-sub">LID / regulated projects</div></div>
+    <div class="tile" onclick="nav('muni',nb('muni'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M4 7V5a4 4 0 018 0v2"/></svg></div><div class="tile-name">Municipal Maintenance</div><div class="tile-sub">Good housekeeping</div></div>
+    <div class="tile" onclick="nav('outreach',nb('outreach'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-5 5-5"/><circle cx="11" cy="7" r="2"/></svg></div><div class="tile-name">Public Ed &amp; Outreach</div><div class="tile-sub">PEOP tracking</div></div>
+    <div class="tile" onclick="nav('trash',nb('trash'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><polyline points="2,4 14,4"/><path d="M6 4V2h4v2"/><rect x="3" y="4" width="10" height="10" rx="1"/></svg></div><div class="tile-name">Trash Compliance</div><div class="tile-sub">Full Capture Systems</div></div>
+    <div class="tile" onclick="nav('sbmp',nb('sbmp'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><polyline points="5,8 7,10 11,6"/></svg></div><div class="tile-name">sBMP / SCM</div><div class="tile-sub">Structural BMP inventory</div></div>
+    <div class="tile" onclick="nav('wqm',nb('wqm'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><path d="M2 12 Q5 6 8 8 Q11 10 14 4"/></svg></div><div class="tile-name">Water Quality</div><div class="tile-sub">Monitoring &amp; sampling</div></div>
+    <div class="tile" onclick="nav('assets',nb('assets'))"><div class="tile-icon" style="background:#E0EEF2"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#2B6E7E" stroke-width="1.5"><rect x="2" y="8" width="5" height="6" rx="1"/><rect x="9" y="5" width="5" height="9" rx="1"/><rect x="5" y="2" width="6" height="3" rx="1"/></svg></div><div class="tile-name">Asset Lifecycle</div><div class="tile-sub">586 outfalls</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-ttl">Recent activity</div>
+      <div class="tl"><div class="tl-dot" style="background:#1D9E75"></div><div class="tl-text"><div class="tl-title">Outfall SW-14 IDDE resolved</div><div class="tl-sub">March 15, 2026 · Lakeport</div></div></div>
+      <div class="tl"><div class="tl-dot" style="background:#E24B4A"></div><div class="tl-text"><div class="tl-title">Illegal dump — Scotts Creek trailhead</div><div class="tl-sub">March 13, 2026 · Investigation open</div></div></div>
+      <div class="tl"><div class="tl-dot" style="background:#2B6E7E"></div><div class="tl-text"><div class="tl-title">Muni staff stormwater training completed</div><div class="tl-sub">March 12, 2026 · 14 staff certified</div></div></div>
+      <div class="tl"><div class="tl-dot" style="background:#BA7517"></div><div class="tl-text"><div class="tl-title">Citizen complaint — Marina Dr discharge</div><div class="tl-sub">March 11, 2026 · Follow-up pending</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Upcoming deadlines</div>
+      <div class="tl"><div class="tl-dot" style="background:#E24B4A"></div><div class="tl-text"><div class="tl-title">Construction corrective action — Auto Body</div><div class="tl-sub">Due March 28, 2026 · 11 days remaining</div></div></div>
+      <div class="tl"><div class="tl-dot" style="background:#E24B4A"></div><div class="tl-text"><div class="tl-title">Q3 construction inspection quota</div><div class="tl-sub">Due April 1, 2026 · 14 remaining</div></div></div>
+      <div class="tl"><div class="tl-dot" style="background:#BA7517"></div><div class="tl-text"><div class="tl-title">Earth Day outreach event</div><div class="tl-sub">April 22, 2026</div></div></div>
+      <div class="tl"><div class="tl-dot" style="background:#BA7517"></div><div class="tl-text"><div class="tl-title">Dry-weather outfall screening — 18 remaining</div><div class="tl-sub">Due May 31, 2026</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- IDDE LIST -->
+<div class="page" id="page-idde">
+  <div class="pg-header">
+    <div><div class="pg-title">Illicit Discharge Detection &amp; Elimination</div><div class="pg-sub">83 incidents · §E.9 / Draft D3</div></div>
+    <button class="btn-p" onclick="nav('idde-form',nb('idde'))">+ Log new incident</button>
+  </div>
+  <div class="metric-row m4">
+    <div class="metric"><div class="metric-lbl">Total incidents</div><div class="metric-val" id="m-total">83</div></div>
+    <div class="metric"><div class="metric-lbl">New / open</div><div class="metric-val v-danger" id="m-open">—</div></div>
+    <div class="metric"><div class="metric-lbl">Closed</div><div class="metric-val v-ok" id="m-closed">—</div></div>
+    <div class="metric"><div class="metric-lbl">Lakeport / Clearlake / County</div><div class="metric-val" id="m-jur" style="font-size:13px">— / — / —</div></div>
+  </div>
+  <div class="tab-row">
+    <button class="tab active" onclick="stab('idde','list',this)">Incident log</button>
+    <button class="tab" onclick="stab('idde','map',this);setTimeout(()=>renderMap(),300)">Map</button>
+  </div>
+  <div id="idde-list">
+    <div class="search-bar">
+      <input class="search-input" id="srch" placeholder="Search by address, city, case ID..." oninput="renderTable()"/>
+      <select class="filter-sel" id="f-status" onchange="renderTable()"><option value="">All statuses</option><option value="new">New</option><option value="open">Open</option><option value="closed">Closed</option></select>
+      <select class="filter-sel" id="f-jur" onchange="renderTable()"><option value="">All jurisdictions</option><option value="lakeport">Lakeport</option><option value="clearlake">Clearlake</option><option value="county">County</option><option value="unknown">Unknown</option></select>
+      <span id="tbl-ct" style="font-size:11px;color:#777;align-self:center;white-space:nowrap"></span>
+    </div>
+    <div class="card tbl-wrap"><table><thead><tr><th>Case ID</th><th>Address</th><th>City</th><th>Jurisdiction</th><th>Date</th><th>Type</th><th>Status</th></tr></thead><tbody id="idde-tbody"></tbody></table></div>
+  </div>
+  <div id="idde-map" class="hidden">
+    <div class="map-box" id="map-el"></div>
+    <div class="leg"><span><span class="ld" style="background:#E24B4A"></span>New/Open</span><span><span class="ld" style="background:#1D9E75"></span>Closed</span></div>
+    <div class="map-note">83 geocoded incidents · Click any pin for details</div>
+  </div>
+</div>
+
+<!-- IDDE FORM -->
+<div class="page" id="page-idde-form">
+  <div class="form-wrap">
+    <div class="pg-header">
+      <div><div class="pg-title">Log New IDDE Incident</div><div class="pg-sub">§E.9.d / Draft D3 · Response timers calculated automatically</div></div>
+      <button class="btn-s" onclick="nav('idde',nb('idde'))">← Back to incidents</button>
+    </div>
+
+    <!-- PDF PREVIEW PANEL -->
+    <div class="preview-panel" id="previewPanel">
+      <div class="preview-bar">
+        <span>📄 Investigation Report — <span id="prev-case-id"></span></span>
+        <div style="display:flex;gap:8px">
+          <button class="btn-save-pdf" onclick="doPrint()">🖨 Save as PDF</button>
+          <button class="btn-close-prev" onclick="closePreview()">✕ Close</button>
+        </div>
+      </div>
+      <iframe id="previewFrame" style="width:100%;height:850px;border:none;display:block" scrolling="yes"></iframe>
+    </div>
+
+    <div class="fh">
+      <div class="fh-title">IDDE Investigation &amp; Reporting Form</div>
+      <div class="fh-sub">Lake County Clean Water Program · §E.9.d / Draft D3 · Matches CWP paper form (April 2023) + compliance additions</div>
+    </div>
+
+    <!-- STEP INDICATORS -->
+    <div class="step-row">
+      <div class="stp"><div class="sc active" id="sc1">1</div><div class="sl active" id="sl1">Intake &amp; CalOES</div></div>
+      <div class="stp"><div class="sc" id="sc2">2</div><div class="sl" id="sl2">Discharge type</div></div>
+      <div class="stp"><div class="sc" id="sc3">3</div><div class="sl" id="sl3">Investigation</div></div>
+      <div class="stp"><div class="sc" id="sc4">4</div><div class="sl" id="sl4">Follow-up</div></div>
+      <div class="stp"><div class="sc" id="sc5">5</div><div class="sl" id="sl5">Review &amp; report</div></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div id="fstep1">
+      <div class="fsec">
+        <div class="fsec-title">Incident identification <span class="cite">§E.9.d / Draft D3.1</span></div>
+        <div class="fr f3">
+          <div class="fd"><label>Case ID</label><input type="text" id="caseId" readonly style="background:#f8f9fa"/></div>
+          <div class="fd"><label>Incident date <span class="req">*</span></label><input type="date" id="incDate"/></div>
+          <div class="fd"><label>Incident time <span class="req">*</span></label><input type="time" id="incTime"/></div>
+        </div>
+        <div class="fr f2">
+          <div class="fd"><label>CalOES incident ID <span class="cite">Required for spills/hazmat</span></label><input type="text" id="caloesId" placeholder="CalOES control number if applicable"/></div>
+          <div class="fd"><label>CalOES reported by</label><input type="text" id="caloesBy" placeholder="Name of person who called CalOES"/></div>
+        </div>
+        <div class="fr">
+          <div class="fd"><label>Municipality <span class="req">*</span></label>
+            <div class="cb-group" id="muni-grp">
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Lake County</div>
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Lakeport</div>
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Clearlake</div>
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Clearlake Oaks</div>
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Kelseyville</div>
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Other</div>
+            </div>
+          </div>
+        </div>
+        <div class="fr"><div class="fd"><label>Location of discharge <span class="req">*</span></label><input type="text" id="location" placeholder="Street address or nearest intersection"/></div></div>
+        <div style="margin-bottom:10px">
+          <label style="display:block;margin-bottom:5px">GPS coordinates</label>
+          <div class="gps-row">
+            <div class="gps-fields">
+              <div class="fd"><label style="font-size:10px">Latitude</label><input type="number" id="lat" step="0.00001" placeholder="Tap button →"/></div>
+              <div class="fd"><label style="font-size:10px">Longitude</label><input type="number" id="lng" step="0.00001" placeholder="Tap button →"/></div>
+            </div>
+            <div style="display:flex;flex-direction:column;padding-bottom:2px">
+              <button class="btn-gps" id="gpsBtn" onclick="getGPS()">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="1" y1="8" x2="3" y2="8"/><line x1="13" y1="8" x2="15" y2="8"/></svg>
+                Get my location
+              </button>
+              <div class="gps-status" id="gpsStat"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fr f2">
+          <div class="fd"><label>How was it discovered?</label>
+            <select id="discovery"><option value="">Select</option><option>Citizen complaint</option><option>Staff observation — routine patrol</option><option>Staff observation — field work</option><option>Dry-weather outfall screening</option><option>Other agency referral</option></select>
+          </div>
+          <div class="fd"><label>Complainant / reporter name &amp; contact</label><input type="text" id="reporter" placeholder="Name, phone or email"/></div>
+        </div>
+        <div class="fr f2">
+          <div class="fd"><label>Responsible party — name</label><input type="text" id="rpName" placeholder="Individual or business name"/></div>
+          <div class="fd"><label>Responsible party — phone</label><input type="tel" id="rpPhone" placeholder="(707) 000-0000"/></div>
+        </div>
+        <div class="fr f2">
+          <div class="fd"><label>Responsible party — company</label><input type="text" id="rpCompany" placeholder="Business or organization"/></div>
+          <div class="fd"><label>Responsible party — address</label><input type="text" id="rpAddr" placeholder="Street address"/></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px">
+        <button class="btn-p" onclick="goFStep(2)">Next: Discharge type →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div id="fstep2" class="hidden">
+      <div id="cc-wrap" class="comp-clock" style="display:none">
+        <div class="cc"><div class="cc-lbl">Time since incident</div><div class="cc-val" id="cc-el">—</div><div class="cc-sub">hrs elapsed</div></div>
+        <div class="cc"><div class="cc-lbl">Required window</div><div class="cc-val" id="cc-win">Select pollutant</div><div class="cc-sub cite" id="cc-cite"></div></div>
+        <div class="cc"><div class="cc-lbl">Window status</div><div class="cc-val" id="cc-st">—</div></div>
+      </div>
+      <div class="fsec">
+        <div class="fsec-title">Category <span class="cite">Paper form field</span></div>
+        <div class="cb-group">
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Food Service</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>CUPA</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Commercial — Other</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Development</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Agriculture</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>General Public</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Municipal Operations</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Other</div>
+        </div>
+      </div>
+      <div class="fsec">
+        <div class="fsec-title">Activity <span class="cite">Paper form field</span></div>
+        <div class="cb-group" id="act-grp">
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Construction/Grading</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Automotive</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Surface Cleaning</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Food Service</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Landscaping</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Agriculture</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Illegal Dumping</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Illicit Connection</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Creek Work</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Regular Operations</div>
+          <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Other</div>
+        </div>
+      </div>
+      <div class="fsec">
+        <div class="fsec-title">Pollutant type <span class="cite">Sewage/Hazardous trigger 24-hr window</span></div>
+        <div class="cb-group" id="poll-grp">
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>None</div>
+          <div class="cb-item d" onclick="toggleCb(this,true);checkPolls()"><div class="cb-box"></div>Hazardous</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Sediment</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Soap</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Oil/Grease</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Concrete</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Organic Matter</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Trash/Litter</div>
+          <div class="cb-item d" onclick="toggleCb(this,true);checkPolls()"><div class="cb-box"></div>Sewage</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Paint</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Unknown</div>
+          <div class="cb-item" onclick="toggleCb(this);checkPolls()"><div class="cb-box"></div>Other</div>
+        </div>
+        <div id="poll-alert" class="hidden" style="margin-top:10px">
+          <div class="alert a-danger"><span class="ai">⚠</span><div><strong>Sewage or Hazardous selected.</strong> Investigation required within <strong>24 hours</strong>. If human health threat, notify Environmental Health: <strong>(707) 263-1164</strong>. <span class="cite">§E.9.d.(ii)(a)(c)</span></div></div>
+        </div>
+        <div style="margin-top:12px;padding:12px;background:#f8f9fa;border-radius:8px;border:0.5px solid #dde3e6">
+          <div style="font-size:11px;font-weight:600;color:#1E3A4A;margin-bottom:6px">Contamination severity assessment <span style="font-size:10px;color:#aaa;font-family:monospace">§E.9.d.(ii)(a)</span></div>
+          <div style="font-size:12px;color:#555;margin-bottom:9px">Does this discharge pose a <strong>significant contamination risk</strong> or immediate threat to human health or the environment?<br><span style="font-size:11px;color:#999">Consider quantity, toxicity, and proximity to receiving water — this determines the investigation window.</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <div id="sig-yes" onclick="setSigCont('yes')" style="display:flex;align-items:center;gap:5px;padding:5px 8px;border:0.5px solid #c5cdd2;border-radius:6px;cursor:pointer;font-size:12px;background:#fff;user-select:none">
+              <div id="sig-yes-box" style="width:12px;height:12px;border-radius:3px;border:1.5px solid #c5cdd2;flex-shrink:0;display:flex;align-items:center;justify-content:center"></div>
+              Yes — significantly contaminated → 24-hr window
+            </div>
+            <div id="sig-no" onclick="setSigCont('no')" style="display:flex;align-items:center;gap:5px;padding:5px 8px;border:0.5px solid #c5cdd2;border-radius:6px;cursor:pointer;font-size:12px;background:#fff;user-select:none">
+              <div id="sig-no-box" style="width:12px;height:12px;border-radius:3px;border:1.5px solid #c5cdd2;flex-shrink:0;display:flex;align-items:center;justify-content:center"></div>
+              No — standard contamination → 72-hr window
+            </div>
+            <div id="sig-unk" onclick="setSigCont('unk')" style="display:flex;align-items:center;gap:5px;padding:5px 8px;border:0.5px solid #2B6E7E;border-radius:6px;cursor:pointer;font-size:12px;background:#E0EEF2;color:#1D5069;font-weight:600;user-select:none">
+              <div id="sig-unk-box" style="width:12px;height:12px;border-radius:3px;border:1.5px solid #2B6E7E;background:#2B6E7E;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:9px">✓</span></div>
+              Not yet assessed
+            </div>
+          </div>
+          <div id="sig-24" style="display:none;margin-top:8px">
+            <div style="border-radius:8px;padding:10px 12px;background:#FCEBEB;border:0.5px solid #F09595;color:#A32D2D;font-size:12px;line-height:1.5;display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:14px;flex-shrink:0">⚠</span>
+              <div><strong>24-hour investigation window applies.</strong> Initiate investigation within 24 hours of report time. <span style="font-size:10px;color:#A32D2D;font-family:monospace">§E.9.d.(ii)(a)</span></div>
+            </div>
+          </div>
+          <div id="sig-72" style="display:none;margin-top:8px">
+            <div style="border-radius:8px;padding:10px 12px;background:#E6F1FB;border:0.5px solid #93C4F0;color:#185FA5;font-size:12px;line-height:1.5;display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:14px;flex-shrink:0">ℹ</span>
+              <div><strong>72-hour investigation window applies.</strong> Initiate investigation within 72 hours of report time. <span style="font-size:10px;color:#185FA5;font-family:monospace">§E.9.d.(ii)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fsec">
+        <div class="fsec-title">Discharge details</div>
+        <div class="fr f3">
+          <div class="fd"><label>Quantity</label>
+            <div class="qty-row"><input type="number" id="qty" placeholder="0" min="0" step="0.1"/><div class="qty-unit">gallons</div></div>
+          </div>
+          <div class="fd"><label>Entered waterbody?</label>
+            <select id="ewb"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unknown">Unknown</option></select>
+          </div>
+          <div class="fd"><label>Name of waterbody</label><input type="text" id="wbn" placeholder="e.g. Clear Lake, Scotts Creek"/></div>
+        </div>
+        <div class="fr f2">
+          <div class="fd"><label>Notified Environmental Health?</label>
+            <select id="neh"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option><option value="Unknown">Unknown</option></select>
+          </div>
+          <div class="fd"><label>Currently flowing?</label>
+            <select id="flowing"><option value="">Select</option><option value="Yes">Yes — active</option><option value="No">No — ceased</option></select>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px">
+        <button class="btn-s" onclick="goFStep(1)">← Back</button>
+        <button class="btn-p" onclick="goFStep(3)">Next: Investigation →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div id="fstep3" class="hidden">
+      <div id="inv-banner" class="hidden" style="margin-bottom:12px"></div>
+      <div class="fsec">
+        <div class="fsec-title">Investigation details</div>
+        <div class="fr f3">
+          <div class="fd"><label>Investigation date <span class="req">*</span></label><input type="date" id="invDate" onchange="calcComp()"/></div>
+          <div class="fd"><label>Investigation time <span class="req">*</span></label><input type="time" id="invTime" onchange="calcComp()"/></div>
+          <div class="fd"><label>Investigated by <span class="req">*</span></label>
+            <select id="invBy">
+              <option value="">Select staff</option>
+              <optgroup label="City of Lakeport">
+                <option>Dylan Teverbaugh — Field Supervisor</option>
+                <option>Forrest Stogner — Field Supervisor</option>
+                <option>Jen Baker — Compliance Officer</option>
+              </optgroup>
+              <optgroup label="City of Clearlake"><option>Clearlake staff — add team</option></optgroup>
+              <optgroup label="Lake County"><option>County staff — add team</option></optgroup>
+            </select>
+          </div>
+        </div>
+        <div id="comp-result" class="hidden" style="margin-top:6px"></div>
+      </div>
+      <div class="fsec">
+        <div class="fsec-title">Field observations</div>
+        <div class="fr"><div class="fd"><label>Observations <span class="req">*</span></label>
+          <textarea id="obs" placeholder="Color, odor, foam, sheen, turbidity · discharge point and flow direction · surrounding land use · potential sources · receiving water condition · weather and days since rain..."></textarea>
+        </div></div>
+        <div class="fr f3">
+          <div class="fd"><label>Weather</label>
+            <select id="weather"><option value="">Select</option><option>Clear / sunny</option><option>Cloudy</option><option>Light rain</option><option>Heavy rain</option><option>Dry — no recent rain (&gt;72 hrs)</option></select>
+          </div>
+          <div class="fd"><label>Days since last rain</label><input type="number" id="daysRain" placeholder="e.g. 5" min="0"/></div>
+          <div class="fd"><label>Active at investigation?</label>
+            <select id="activeAtInv"><option value="">Select</option><option>Yes — still flowing</option><option>No — ceased</option><option>Ponding only</option></select>
+          </div>
+        </div>
+      </div>
+      <!-- PHOTOS -->
+      <div class="fsec">
+        <div class="fsec-title">Photos <span class="ph-lbl" id="ph-lbl"></span></div>
+        <div class="alert a-info"><span class="ai">📷</span><div>Photos are saved with this record and appear in the PDF appendix. Tap any thumbnail to view full size.</div></div>
+        <div class="uz" id="uz" onclick="document.getElementById('pi').click()" ondragover="event.preventDefault();this.classList.add('filled')" ondragleave="this.classList.remove('filled')" ondrop="doDrop(event)">
+          <div style="font-size:20px;margin-bottom:5px">📷</div>
+          <div style="font-size:12px;font-weight:600;color:#777">Tap to upload photos or drag &amp; drop</div>
+          <div style="font-size:11px;color:#aaa;margin-top:2px">Saved with record · appear in PDF appendix</div>
+        </div>
+        <input type="file" id="pi" multiple accept="image/*" style="display:none" onchange="addPhotos(this.files)"/>
+        <div class="photo-grid" id="pg"></div>
+      </div>
+      <!-- FIELD SCREENING -->
+      <div class="fsec">
+        <div class="fsec-title">Field screening — indicator parameters <span class="cite">§E.9.c Table 1</span></div>
+        <div class="alert a-info"><span class="ai">ℹ</span><div>Enter field test results — values exceeding action levels are flagged automatically. Leave blank if not tested. <span class="cite">§E.9.c.(ii)</span></div></div>
+        <table class="pt">
+          <thead><tr><th>Parameter</th><th>Result</th><th>Units</th><th>Action level</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Ammonia</td><td><input type="number" class="pi2" data-p="ammonia" data-op="gte" data-t="50" onchange="checkParam(this)" placeholder="—" style="width:80px"/></td><td class="cite">mg/L</td><td class="cite">≥ 50</td><td><span class="pf pf-empty" id="f-ammonia">Not tested</span></td></tr>
+            <tr><td>pH</td><td><input type="number" class="pi2" data-p="ph" data-op="range" data-tl="5" data-th="9" onchange="checkParam(this)" placeholder="—" style="width:80px" step="0.1"/></td><td class="cite">units</td><td class="cite">≤5 or ≥9</td><td><span class="pf pf-empty" id="f-ph">Not tested</span></td></tr>
+            <tr><td>Conductivity</td><td><input type="number" class="pi2" data-p="conductivity" data-op="gte" data-t="2000" onchange="checkParam(this)" placeholder="—" style="width:80px"/></td><td class="cite">μS/cm</td><td class="cite">≥ 2,000</td><td><span class="pf pf-empty" id="f-conductivity">Not tested</span></td></tr>
+            <tr><td>Turbidity</td><td><input type="number" class="pi2" data-p="turbidity" data-op="gte" data-t="1000" onchange="checkParam(this)" placeholder="—" style="width:80px"/></td><td class="cite">NTU</td><td class="cite">≥ 1,000</td><td><span class="pf pf-empty" id="f-turbidity">Not tested</span></td></tr>
+            <tr><td>Potassium</td><td><input type="number" class="pi2" data-p="potassium" data-op="gte" data-t="20" onchange="checkParam(this)" placeholder="—" style="width:80px"/></td><td class="cite">mg/L</td><td class="cite">≥ 20</td><td><span class="pf pf-empty" id="f-potassium">Not tested</span></td></tr>
+            <tr><td>Hardness</td><td><input type="number" class="pi2" data-p="hardness" data-op="range" data-tl="10" data-th="2000" onchange="checkParam(this)" placeholder="—" style="width:80px"/></td><td class="cite">mg/L</td><td class="cite">≤10 or ≥2,000</td><td><span class="pf pf-empty" id="f-hardness">Not tested</span></td></tr>
+          </tbody>
+        </table>
+        <div id="param-alert" class="hidden" style="margin-top:10px"><div class="alert a-danger"><span class="ai">⚠</span><div><strong>Action level exceeded.</strong> Follow-up investigation required. <span class="cite">§E.9.c.(ii)(c)</span></div></div></div>
+      </div>
+      <!-- SOURCE & ENFORCEMENT -->
+      <div class="fsec">
+        <div class="fsec-title">Source identification &amp; enforcement</div>
+        <div class="fr f2">
+          <div class="fd"><label>Source identified?</label>
+            <select id="srcId" onchange="srcChange()"><option value="">Select</option><option value="yes">Yes — source found</option><option value="no">No — under investigation</option><option value="authorized">Authorized discharge</option><option value="unresolved">Cannot be identified</option></select>
+          </div>
+          <div class="fd"><label>Sample taken?</label>
+            <select id="sampleTaken"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+          </div>
+        </div>
+        <div id="ca-section" class="hidden" style="border-left:3px solid #2B6E7E;padding-left:13px;margin-top:10px">
+          <div class="fr"><div class="fd"><label>Corrective actions required</label><textarea id="caReq" placeholder="Describe required corrective actions..."></textarea></div></div>
+          <div class="fr f2">
+            <div class="fd"><label>Compliance date</label><input type="date" id="compDate"/></div>
+            <div class="fd"><label>Abated?</label>
+              <select id="abated"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="fr">
+          <div class="fd"><label>Enforcement action</label>
+            <div class="cb-group" id="enf-grp">
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>None</div>
+              <div class="cb-item" onclick="toggleCb(this)"><div class="cb-box"></div>Verbal Warning</div>
+              <div class="cb-item d" onclick="toggleCb(this,true)"><div class="cb-box"></div>Citation</div>
+              <div class="cb-item d" onclick="toggleCb(this,true)"><div class="cb-box"></div>Admin. Order</div>
+              <div class="cb-item d" onclick="toggleCb(this,true)"><div class="cb-box"></div>Stop Work Order</div>
+            </div>
+          </div>
+        </div>
+        <div class="fr f3">
+          <div class="fd"><label>Enforcement date</label><input type="date" id="enfDate"/></div>
+          <div class="fd"><label>Complainant advised?</label>
+            <select id="compAdvised"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option><option value="N/A">N/A</option></select>
+          </div>
+          <div class="fd"><label>Education materials provided?</label>
+            <select id="edMat"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+          </div>
+        </div>
+      </div>
+      <!-- REFERRALS -->
+      <div class="fsec">
+        <div class="fsec-title">Referrals <span class="cite">Add as many as needed</span></div>
+        <div class="ref-list" id="ref-list"></div>
+        <button class="btn-add-ref" onclick="addRef()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+          Add referral
+        </button>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px">
+        <button class="btn-s" onclick="goFStep(2)">← Back</button>
+        <button class="btn-p" onclick="goFStep(4)">Next: Follow-up →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 FOLLOW-UP -->
+    <div id="fstep4" class="hidden">
+      <div class="alert a-info"><span class="ai">ℹ</span><div>Complete when follow-up is conducted. You can submit the main record now and return to this later.</div></div>
+      <div class="fsec">
+        <div class="fsec-title">Follow-up details</div>
+        <div class="fr f3">
+          <div class="fd"><label>Follow-up date</label><input type="date" id="fuDate"/></div>
+          <div class="fd"><label>Follow-up time</label><input type="time" id="fuTime"/></div>
+          <div class="fd"><label>CalOES control #</label><input type="text" id="fuCalOES" placeholder="If applicable"/></div>
+        </div>
+        <div class="fr f2">
+          <div class="fd"><label>Follow-up conducted by</label>
+            <select id="fuBy"><option value="">Select staff</option>
+              <optgroup label="City of Lakeport">
+                <option>Dylan Teverbaugh — Field Supervisor</option>
+                <option>Forrest Stogner — Field Supervisor</option>
+                <option>Jen Baker — Compliance Officer</option>
+              </optgroup>
+              <optgroup label="City of Clearlake"><option>Clearlake staff</option></optgroup>
+              <optgroup label="Lake County"><option>County staff</option></optgroup>
+            </select>
+          </div>
+          <div class="fd"><label>Follow-up method</label>
+            <select id="fuMethod"><option value="">Select</option><option>Phone call</option><option>Email</option><option>Text</option><option>Site visit</option><option>Other</option></select>
+          </div>
+        </div>
+        <div class="fr"><div class="fd"><label>Observations</label><textarea id="fuObs" placeholder="Conditions at time of follow-up — was discharge eliminated?"></textarea></div></div>
+        <div class="fr"><div class="fd"><label>Actions recommended</label><textarea id="fuActions" placeholder="Recommended next steps..."></textarea></div></div>
+        <div class="fr f2">
+          <div class="fd"><label>Abated?</label>
+            <select id="fuAbated"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+          </div>
+          <div class="fd"><label>Sample taken?</label>
+            <select id="fuSample"><option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option></select>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px">
+        <button class="btn-s" onclick="goFStep(3)">← Back</button>
+        <button class="btn-p" onclick="goFStep(5)">Review &amp; generate report →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5 REVIEW -->
+    <div id="fstep5" class="hidden">
+      <div class="fsec"><div class="fsec-title">Record summary</div><div id="form-summary"></div></div>
+      <div class="abar">
+        <div class="abar-title">Generate official investigation report:</div>
+        <div class="abar-btns">
+          <button class="btn-gen" onclick="showPreview()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l4 4v9H3z"/><polyline points="10,2 10,6 14,6"/></svg>
+            Preview report
+          </button>
+          <a class="btn-email" id="email-btn" href="#" onclick="return buildMailto()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><polyline points="1,3 8,9 15,3"/></svg>
+            Email to RWQCB
+          </a>
+          <button class="btn-s" onclick="resetForm()" style="margin-left:auto">Start new record</button>
+        </div>
+        <div style="font-size:10px;color:#aaa;margin-top:8px">Preview renders below · use "Save as PDF" in preview bar · attach to email</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px">
+        <button class="btn-s" onclick="goFStep(4)">← Back</button>
+      </div>
+    </div>
+
+  </div><!-- form-wrap -->
+</div><!-- page-idde-form -->
+
+<!-- PLACEHOLDER PAGES -->
+<div class="page" id="page-construction"><div class="pg-header"><div><div class="pg-title">Construction Site Stormwater Control</div><div class="pg-sub">§E.10 / Draft D5</div></div><button class="btn-p">+ Log inspection</button></div><div class="ph">Construction inspections module — coming soon.</div></div>
+<div class="page" id="page-industrial"><div class="pg-header"><div><div class="pg-title">Industrial / Commercial Inspections</div><div class="pg-sub">§E.9.b / Draft D3.4</div></div><button class="btn-p">+ Log inspection</button></div><div class="ph">Industrial and commercial inspections module — coming soon.</div></div>
+<div class="page" id="page-postconstruction"><div class="pg-header"><div><div class="pg-title">Post-Construction Stormwater Management</div><div class="pg-sub">§E.12 / Draft D6</div></div><button class="btn-p">+ Log project</button></div><div class="ph">Post-construction / LID module — coming soon.</div></div>
+<div class="page" id="page-muni"><div class="pg-header"><div><div class="pg-title">Municipal Maintenance</div><div class="pg-sub">§E.11 / Draft D4</div></div><button class="btn-p">+ Log activity</button></div><div class="ph">Municipal maintenance module — coming soon.</div></div>
+<div class="page" id="page-outreach"><div class="pg-header"><div><div class="pg-title">Public Education &amp; Outreach</div><div class="pg-sub">§E.7 / Draft D2</div></div><button class="btn-p">+ Log event</button></div><div class="ph">Public education and outreach module — coming soon.</div></div>
+<div class="page" id="page-trash"><div class="pg-header"><div><div class="pg-title">Trash Compliance — Full Capture Systems</div><div class="pg-sub">Trash Provisions / Draft D4</div></div><button class="btn-p">+ Add FCS</button></div><div class="ph">Trash compliance module — coming soon.</div></div>
+<div class="page" id="page-sbmp"><div class="pg-header"><div><div class="pg-title">sBMP / SCM Diagnostics</div><div class="pg-sub">§E.12.h / Draft D6.10</div></div><button class="btn-p">+ Add BMP</button></div><div class="ph">sBMP / SCM module — coming soon.</div></div>
+<div class="page" id="page-wqm"><div class="pg-header"><div><div class="pg-title">Water Quality Monitoring</div><div class="pg-sub">§E.13–E.15 / Draft D8</div></div><button class="btn-p">+ Log sample</button></div><div class="ph">Water quality monitoring module — coming soon.</div></div>
+<div class="page" id="page-assets"><div class="pg-header"><div><div class="pg-title">Asset Lifecycle — Outfall Inventory</div><div class="pg-sub">586 geocoded outfalls · §E.9.a / Draft D3</div></div><button class="btn-p">+ Add asset</button></div><div class="ph">Asset lifecycle module — coming soon. 586 geocoded outfalls ready to display.</div></div>
+<div class="page" id="page-impact"><div class="pg-header"><div><div class="pg-title">Program Impact</div><div class="pg-sub">Draft D9</div></div></div><div class="ph">Program impact metrics — will auto-populate as data is entered across all modules.</div></div>
+<div class="page" id="page-annual"><div class="pg-header"><div><div class="pg-title">Annual Reporting</div><div class="pg-sub">FY 2025–2026 · Due October 15, 2026</div></div><button class="btn-p">Draft narrative</button></div><div class="ph">Annual reporting module — coming soon. Will auto-aggregate data from all modules for SMARTS submission.</div></div>
+
+</div><!-- main -->
+</div><!-- body -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ── ALL 83 REAL INCIDENTS ──
+const INCIDENTS = [
+  {
+    "id": "25-2322",
+    "address": "76 Lafferty Rd",
+    "city": "Lakeport",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2025-05-09",
+    "lat": 39.105336,
+    "lng": -122.900129
+  },
+  {
+    "id": "25-2160",
+    "address": "18132 Big Canyon Rd",
+    "city": "Middletown",
+    "jur": "unknown",
+    "type": "illicit-flow",
+    "status": "open",
+    "date": "2025-05-21",
+    "lat": 38.823649,
+    "lng": -122.630879
+  },
+  {
+    "id": "ID25-03",
+    "address": "1025 Martin St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "spill",
+    "status": "closed",
+    "date": "2025-03-03",
+    "lat": 39.039315,
+    "lng": -122.922279
+  },
+  {
+    "id": "23-0386",
+    "address": "9445 Mendenhall Ave",
+    "city": "Upper Lake",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-01-11",
+    "lat": 39.163923,
+    "lng": -122.912813
+  },
+  {
+    "id": "24-5395",
+    "address": "13470 Driftwood Vlg",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2025-05-21",
+    "lat": 39.022111,
+    "lng": -122.658934
+  },
+  {
+    "id": "23-1409",
+    "address": "600 Keys Blvd",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-02-26",
+    "lat": 39.020257,
+    "lng": -122.666991
+  },
+  {
+    "id": "ID21-01",
+    "address": "155 S Polk St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "illegal-dumping",
+    "status": "closed",
+    "date": "2021-10-27",
+    "lat": 39.04172,
+    "lng": -122.922011
+  },
+  {
+    "id": "24-3469",
+    "address": "1150 Mockingbird Ln",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2024-06-18",
+    "lat": 39.139612,
+    "lng": -122.912368
+  },
+  {
+    "id": "ID21-02",
+    "address": "550 Martin St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "unclassified",
+    "status": "closed",
+    "date": "2025-05-27",
+    "lat": 39.04072,
+    "lng": -122.919239
+  },
+  {
+    "id": "24-3457",
+    "address": "653 Spinnaker Ct",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2024-06-17",
+    "lat": 39.019725,
+    "lng": -122.666572
+  },
+  {
+    "id": "232-1682",
+    "address": "12734 Blue Heron Ct",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-03-08",
+    "lat": 39.022052,
+    "lng": -122.671017
+  },
+  {
+    "id": "23-1900",
+    "address": "2615 S Main St",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-03-15",
+    "lat": 39.019081,
+    "lng": -122.913567
+  },
+  {
+    "id": "ID21-03",
+    "address": "275 N Brush St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "unclassified",
+    "status": "closed",
+    "date": "2025-05-27",
+    "lat": 39.04364,
+    "lng": -122.918253
+  },
+  {
+    "id": "ID21-04",
+    "address": "1071 11th St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "unclassified",
+    "status": "closed",
+    "date": "2021-08-23",
+    "lat": 39.048613,
+    "lng": -122.925285
+  },
+  {
+    "id": "24-2808",
+    "address": "9574 Rice St",
+    "city": "Upper Lake",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2024-05-16",
+    "lat": 39.165336,
+    "lng": -122.907305
+  },
+  {
+    "id": "ID25-01",
+    "address": "365 Bevins St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "unclassified",
+    "status": "closed",
+    "date": "2025-01-15",
+    "lat": 39.03821,
+    "lng": -122.924922
+  },
+  {
+    "id": "ID25-02",
+    "address": "275 Second St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "unclassified",
+    "status": "closed",
+    "date": "2025-01-29",
+    "lat": 39.043014,
+    "lng": -122.916849
+  },
+  {
+    "id": "23-1959",
+    "address": "16445 Main St",
+    "city": "Lower Lake",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-03-15",
+    "lat": 38.90972,
+    "lng": -122.604542
+  },
+  {
+    "id": "24-2723",
+    "address": "5877 Lake St",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2024-05-12",
+    "lat": 39.094938,
+    "lng": -122.802875
+  },
+  {
+    "id": "23-1988",
+    "address": "13711 Jensen Rd",
+    "city": "Clearlake Oaks",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-03-16",
+    "lat": 39.014055,
+    "lng": -122.653682
+  },
+  {
+    "id": "24-2469",
+    "address": "2685 Lakeshore Blvd",
+    "city": "Upper Lake",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2024-04-28",
+    "lat": 39.120933,
+    "lng": -122.863265
+  },
+  {
+    "id": "23-2246",
+    "address": "9766 Winchester St",
+    "city": "Lower Lake",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-03-20",
+    "lat": 38.912185,
+    "lng": -122.604755
+  },
+  {
+    "id": "24-1118",
+    "address": "12175 Seigler Canyon Rd",
+    "city": "Middletown",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2024-02-22",
+    "lat": 38.868017,
+    "lng": -122.677766
+  },
+  {
+    "id": "23-2341",
+    "address": "Mile 27.6 State Hwy 20 E",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-03-31",
+    "lat": 38.92818,
+    "lng": -122.602949
+  },
+  {
+    "id": "24-1051",
+    "address": "Doten Rd",
+    "city": "Kelseyville",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2024-02-20",
+    "lat": 38.948642,
+    "lng": -122.726373
+  },
+  {
+    "id": "23-7578",
+    "address": "6131 E Highway 20",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-12-11",
+    "lat": 39.091896,
+    "lng": -122.798737
+  },
+  {
+    "id": "ID23-02",
+    "address": "2100 Lakeshore Blvd",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "spill",
+    "status": "closed",
+    "date": "2023-04-25",
+    "lat": 39.058292,
+    "lng": -122.912637
+  },
+  {
+    "id": "ID22-03",
+    "address": "1155 S Main St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2022-08-22",
+    "lat": 39.034546,
+    "lng": -122.91585
+  },
+  {
+    "id": "ID22-04",
+    "address": "501 A N Main St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2022-11-30",
+    "lat": 39.045435,
+    "lng": -122.915439
+  },
+  {
+    "id": "ID22-05",
+    "address": "1060 N Main St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "spill",
+    "status": "closed",
+    "date": "2022-12-27",
+    "lat": 39.048789,
+    "lng": -122.913916
+  },
+  {
+    "id": "ID23-01",
+    "address": "390 Martin St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2023-01-12",
+    "lat": 39.040821,
+    "lng": -122.917879
+  },
+  {
+    "id": "23-2910",
+    "address": "14057 Ettawa Springs Rd",
+    "city": "Middletown",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-11-01",
+    "lat": 38.851417,
+    "lng": -122.693358
+  },
+  {
+    "id": "ID23-03",
+    "address": "1495 Palm Drive",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2023-09-01",
+    "lat": 39.05185,
+    "lng": -122.921452
+  },
+  {
+    "id": "ID23-04",
+    "address": "445 N Main St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2023-09-18",
+    "lat": 39.045074,
+    "lng": -122.915643
+  },
+  {
+    "id": "ID23-05",
+    "address": "2617 S Main St",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "spill",
+    "status": "closed",
+    "date": "2023-09-29",
+    "lat": 39.018753,
+    "lng": -122.913378
+  },
+  {
+    "id": "ID24-01 Peckham Ct RV",
+    "address": "209 Peckham Ct",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "spill",
+    "status": "closed",
+    "date": "2024-02-09",
+    "lat": 39.025718,
+    "lng": -122.917176
+  },
+  {
+    "id": "ID24-03",
+    "address": "105 S Starr St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2024-04-17",
+    "lat": 39.04188,
+    "lng": -122.923026
+  },
+  {
+    "id": "23-3046",
+    "address": "3270 Lakeview Dr",
+    "city": "Nice",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-05-07",
+    "lat": 39.12794,
+    "lng": -122.852116
+  },
+  {
+    "id": "23-3315",
+    "address": "12957 Lakeland St",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-05-19",
+    "lat": 39.021339,
+    "lng": -122.66885
+  },
+  {
+    "id": "23-7280",
+    "address": "Mile 19.2 State Hwy 20 E W",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-11-26",
+    "lat": 39.028774,
+    "lng": -122.737042
+  },
+  {
+    "id": "23-6839",
+    "address": "770 Soda Bay Rd",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-11-01",
+    "lat": 39.011802,
+    "lng": -122.896744
+  },
+  {
+    "id": "23-3806",
+    "address": "Mile 18.8 State Hwy 20 E",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-06-11",
+    "lat": 39.090898,
+    "lng": -122.795218
+  },
+  {
+    "id": "SSO-1-31-24",
+    "address": "6825 and 6855 Meadowbrook Dr",
+    "city": "Clearlake",
+    "jur": "clearlake",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2024-01-31",
+    "lat": 38.933621,
+    "lng": -122.63105
+  },
+  {
+    "id": "ID24-02 Auto HazMat Esplanade",
+    "address": "430 S Main St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "spill",
+    "status": "closed",
+    "date": "2024-03-28",
+    "lat": 39.039364,
+    "lng": -122.915061
+  },
+  {
+    "id": "23-3807",
+    "address": "1985 Park Dr",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-06-11",
+    "lat": 39.028656,
+    "lng": -122.847919
+  },
+  {
+    "id": "23-6852",
+    "address": "Mile 27 State Hwy 20 E",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2025-05-22",
+    "lat": 39.162416,
+    "lng": -122.913612
+  },
+  {
+    "id": "SSO-1-23-24",
+    "address": "Rumsey Rd",
+    "city": "Clearlake",
+    "jur": "clearlake",
+    "type": "illicit-flow",
+    "status": "closed",
+    "date": "2024-01-23",
+    "lat": 38.970517,
+    "lng": -122.622198
+  },
+  {
+    "id": "23-4445",
+    "address": "2735 Mission Rancheria Rd",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-07-11",
+    "lat": 39.017458,
+    "lng": -122.887531
+  },
+  {
+    "id": "21-3747",
+    "address": "7901 Soda Bay Rd",
+    "city": "Kelseyville",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-07-14",
+    "lat": 38.998816,
+    "lng": -122.759872
+  },
+  {
+    "id": "23-4716",
+    "address": "2 Lafferty Rd",
+    "city": "Lakeport",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-07-23",
+    "lat": 39.10488,
+    "lng": -122.894337
+  },
+  {
+    "id": "21-3935",
+    "address": "9617 Witter Springs Rd",
+    "city": "Witter Springs",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-07-23",
+    "lat": 39.166816,
+    "lng": -122.966915
+  },
+  {
+    "id": "23-4778",
+    "address": "4217 Foothill Dr",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-07-25",
+    "lat": 39.095125,
+    "lng": -122.791489
+  },
+  {
+    "id": "21-5633",
+    "address": "Mile 5.8 State Hwy 20 W E",
+    "city": "Witter Springs",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-10-09",
+    "lat": 39.182509,
+    "lng": -122.959188
+  },
+  {
+    "id": "23-5271",
+    "address": "24800 Highway 29",
+    "city": "Middletown",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2025-05-22",
+    "lat": 38.685895,
+    "lng": -122.594442
+  },
+  {
+    "id": "21-5664",
+    "address": "Mile 5.5 State Hwy 20 W E",
+    "city": "Witter Springs",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-10-10",
+    "lat": 39.182509,
+    "lng": -122.959188
+  },
+  {
+    "id": "23-5320",
+    "address": "8248 Point Dr",
+    "city": "Kelseyville",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-08-21",
+    "lat": 39.020492,
+    "lng": -122.753873
+  },
+  {
+    "id": "21-5811",
+    "address": "13431 Ebbtide Vlg",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-10-18",
+    "lat": 39.020678,
+    "lng": -122.659463
+  },
+  {
+    "id": "21-5933",
+    "address": "10352 Socrates Mine Rd",
+    "city": "Middletown",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-10-24",
+    "lat": 38.7845,
+    "lng": -122.715739
+  },
+  {
+    "id": "21-5949",
+    "address": "1320 Van Sleeper Rd",
+    "city": "Upper Lake",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-10-24",
+    "lat": 39.166734,
+    "lng": -122.933312
+  },
+  {
+    "id": "21-6203",
+    "address": "Mile 39.8 State Hwy 20 E",
+    "city": "Clearlake Oaks",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-11-01",
+    "lat": 39.027476,
+    "lng": -122.735435
+  },
+  {
+    "id": "23-5800",
+    "address": "",
+    "city": "Clearlake",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2025-05-22",
+    "lat": 38.95823,
+    "lng": -122.62637
+  },
+  {
+    "id": "21-6563",
+    "address": "16407 Butts Canyon Rd",
+    "city": "Middletown",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-11-17",
+    "lat": 38.754557,
+    "lng": -122.606991
+  },
+  {
+    "id": "21-6782",
+    "address": "Mile 26.6 State Hwy 20 E",
+    "city": "Clearlake Oaks",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-11-29",
+    "lat": 38.92818,
+    "lng": -122.602949
+  },
+  {
+    "id": "21-7369",
+    "address": "4735 Loasa Rd",
+    "city": "Kelseyville",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-01-03",
+    "lat": 38.985038,
+    "lng": -122.841807
+  },
+  {
+    "id": "ID24-05",
+    "address": "591 Martin St",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "spill",
+    "status": "closed",
+    "date": "2024-12-04",
+    "lat": 39.039192,
+    "lng": -122.919916
+  },
+  {
+    "id": "22-0213",
+    "address": "3750 Benson Ln",
+    "city": "Kelseyville",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-01-12",
+    "lat": 38.999701,
+    "lng": -122.836027
+  },
+  {
+    "id": "23-5987",
+    "address": "2315 Park Dr",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2025-05-22",
+    "lat": 39.020811,
+    "lng": -122.847631
+  },
+  {
+    "id": "25-04",
+    "address": "443 Lakeport Blvd",
+    "city": "Lakeport",
+    "jur": "lakeport",
+    "type": "unclassified",
+    "status": "closed",
+    "date": "2025-04-15",
+    "lat": 39.034803,
+    "lng": -122.918041
+  },
+  {
+    "id": "23-6388",
+    "address": "Mile 38 State Hwy 20 W",
+    "city": "Clearlake Oaks",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-10-06",
+    "lat": 39.163632,
+    "lng": -122.916804
+  },
+  {
+    "id": "22-0474",
+    "address": "11752 Konocti Dr",
+    "city": "Clearlake Oaks",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-01-24",
+    "lat": 39.023534,
+    "lng": -122.690771
+  },
+  {
+    "id": "22-5021",
+    "address": "His Way",
+    "city": "Kelseyville",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-08-31",
+    "lat": 38.930811,
+    "lng": -122.793699
+  },
+  {
+    "id": "22-0585",
+    "address": "Mile 18 State Hwy 20 E",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-01-30",
+    "lat": 39.162561,
+    "lng": -122.912902
+  },
+  {
+    "id": "22-5531",
+    "address": "3450 Hill Rd E",
+    "city": "Lakeport",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-09-21",
+    "lat": 39.080783,
+    "lng": -122.928629
+  },
+  {
+    "id": "22-1776",
+    "address": "8918 Bridge Arbor Dr",
+    "city": "Upper Lake",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-03-29",
+    "lat": 39.156924,
+    "lng": -122.91389
+  },
+  {
+    "id": "22-6552",
+    "address": "4583 Konocti Rd",
+    "city": "Kelseyville",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-11-06",
+    "lat": 38.97545,
+    "lng": -122.828582
+  },
+  {
+    "id": "22-2144",
+    "address": "2735 Mission Rancheria Rd",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-04-15",
+    "lat": 39.017458,
+    "lng": -122.887531
+  },
+  {
+    "id": "22-6617",
+    "address": "3351 Country Club Dr",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-11-09",
+    "lat": 39.083581,
+    "lng": -122.789853
+  },
+  {
+    "id": "22-2200",
+    "address": "2616 E State Hwy 20",
+    "city": "Nice",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-04-18",
+    "lat": 39.126091,
+    "lng": -122.862088
+  },
+  {
+    "id": "21-1768",
+    "address": "2735 Mission Rancheria Rd",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2021-04-03",
+    "lat": 39.017458,
+    "lng": -122.887531
+  },
+  {
+    "id": "22-6710",
+    "address": "Mile 38.5 State Hwy 29 N",
+    "city": "Lakeport",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-11-14",
+    "lat": 39.045442,
+    "lng": -122.914091
+  },
+  {
+    "id": "22-6782",
+    "address": "Mile 18 State Hwy 20 E",
+    "city": "Lucerne",
+    "jur": "county",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2022-11-17",
+    "lat": 39.162561,
+    "lng": -122.912902
+  },
+  {
+    "id": "22-7578",
+    "address": "Bridge Arbor Dr",
+    "city": "Upper Lake",
+    "jur": "unknown",
+    "type": "unclassified",
+    "status": "new",
+    "date": "2023-12-29",
+    "lat": 39.138776,
+    "lng": -122.908637
+  },
+  {
+    "id": "SSO-10-7-25",
+    "address": "15534 22nd Ave",
+    "city": "Clearlake",
+    "jur": "clearlake",
+    "type": "spill",
+    "status": "closed",
+    "date": "2025-10-07",
+    "lat": 38.939026,
+    "lng": -122.621821
+  }
+];
+
+const JUR_LABELS={lakeport:"Lakeport",clearlake:"Clearlake",county:"Lake County",unknown:"Unknown"};
+const STATUS_CLS={new:"b-danger",open:"b-warn",closed:"b-ok"};
+const TYPE_LABELS={"illicit-flow":"Illicit flow","spill":"Spill","illegal-dumping":"Illegal dumping","unclassified":"Unclassified","":"—"};
+const CONTACTS=[
+  {n:"Craig Wetherbee — Environmental Health Director",d:"Environmental Health"},
+  {n:"Katie Carpenter — Environmental Health Office Supervisor",d:"Environmental Health"},
+  {n:"Jonathan Portney — Health Services Director",d:"Health Administration"},
+  {n:"Scott Harter — Special Districts Administrator",d:"Special Districts"},
+  {n:"Leah Sautelet — Emergency Services Manager",d:"Emergency Services"},
+  {n:"Elizabeth Lee — Storm Water Resource Control Engineer, RWQCB",d:"Central Valley RWQCB"},
+  {n:"Other",d:""}
+];
+
+let currentJur="all", mapInstance=null, photos=[], lbIdx=0, refCount=0;
+const formNow=new Date();
+
+// INIT DATE/TIME + CASE ID
+function initForm(){
+  const n=new Date();
+  if(document.getElementById('incDate')) document.getElementById('incDate').value=n.toISOString().split('T')[0];
+  if(document.getElementById('incTime')) document.getElementById('incTime').value=n.toTimeString().slice(0,5);
+  if(document.getElementById('invDate')) document.getElementById('invDate').value=n.toISOString().split('T')[0];
+  if(document.getElementById('invTime')) document.getElementById('invTime').value=n.toTimeString().slice(0,5);
+  if(document.getElementById('caseId')) document.getElementById('caseId').value='IDDE-'+n.getFullYear()+'-'+(Math.floor(Math.random()*900)+100);
+}
+
+// TOP BAR
+const now=new Date();
+document.getElementById('hero-date').textContent=now.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
+const daysLeft=Math.round((new Date('2026-10-15')-now)/86400000);
+document.getElementById('hm-days').textContent=daysLeft;
+
+// JUR BADGE
+function jurBadge(j){
+  const cls={lakeport:"b-teal",clearlake:"b-ok",county:"b-purple",unknown:"b-gray"};
+  return`<span class="badge ${cls[j]||'b-gray'}">${JUR_LABELS[j]||j}</span>`;
+}
+
+// RENDER TABLE
+function renderTable(){
+  const srch=(document.getElementById('srch')?.value||'').toLowerCase();
+  const st=document.getElementById('f-status')?.value||'';
+  const jur=document.getElementById('f-jur')?.value||'';
+  let inc=INCIDENTS;
+  if(jur) inc=inc.filter(r=>r.jur===jur);
+  else if(currentJur!=='all') inc=inc.filter(r=>r.jur===currentJur);
+  if(st) inc=inc.filter(r=>r.status===st);
+  if(srch) inc=inc.filter(r=>
+    (r.address||'').toLowerCase().includes(srch)||
+    (r.city||'').toLowerCase().includes(srch)||
+    (r.id||'').toLowerCase().includes(srch)||
+    (r.type||'').toLowerCase().includes(srch)
+  );
+  const ct=document.getElementById('tbl-ct');
+  if(ct) ct.textContent=inc.length+' records';
+  const tb=document.getElementById('idde-tbody');
+  if(tb) tb.innerHTML=inc.map(r=>`<tr>
+    <td><strong>${r.id}</strong></td>
+    <td>${r.address}</td>
+    <td>${r.city}</td>
+    <td>${jurBadge(r.jur)}</td>
+    <td>${r.date}</td>
+    <td>${TYPE_LABELS[r.type]||r.type||'—'}</td>
+    <td><span class="badge ${STATUS_CLS[r.status]||'b-gray'}">${r.status}</span></td>
+  </tr>`).join('');
+  // Metrics
+  const all=currentJur==='all'?INCIDENTS:INCIDENTS.filter(r=>r.jur===currentJur);
+  const openCt=all.filter(r=>r.status!=='closed').length;
+  const closedCt=all.filter(r=>r.status==='closed').length;
+  const lp=INCIDENTS.filter(r=>r.jur==='lakeport').length;
+  const cl=INCIDENTS.filter(r=>r.jur==='clearlake').length;
+  const co=INCIDENTS.filter(r=>r.jur==='county').length;
+  ['m-total','m-open','m-closed','m-jur','hm-inc','hm-open'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(id==='m-total') el.textContent=all.length;
+    else if(id==='m-open'||id==='hm-open') el.textContent=openCt;
+    else if(id==='m-closed') el.textContent=closedCt;
+    else if(id==='m-jur') el.textContent=lp+' / '+cl+' / '+co;
+    else if(id==='hm-inc') el.textContent=all.length;
+  });
+}
+
+// MAP
+function renderMap(){
+  if(mapInstance){mapInstance.remove();mapInstance=null;}
+  const el=document.getElementById('map-el');
+  if(!el) return;
+  mapInstance=L.map('map-el',{center:[39.05,-122.82],zoom:10,scrollWheelZoom:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(mapInstance);
+  const inc=currentJur==='all'?INCIDENTS:INCIDENTS.filter(r=>r.jur===currentJur);
+  inc.forEach(r=>{
+    if(!r.lat||!r.lng) return;
+    const color=r.status==='closed'?'#1D9E75':'#E24B4A';
+    const icon=L.divIcon({html:`<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.9);box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`,iconSize:[12,12],className:''});
+    L.marker([r.lat,r.lng],{icon}).addTo(mapInstance)
+      .bindPopup(`<strong>${r.id}</strong><br>${r.address}, ${r.city}<br>${TYPE_LABELS[r.type]||r.type} · <strong>${r.status}</strong>`);
+  });
+}
+
+// JUR SWITCH
+function switchJur(jur){
+  currentJur=jur;
+  const labels={all:"Regional",lakeport:"Lakeport",clearlake:"Clearlake",county:"Lake County"};
+  document.getElementById('jurBadge').textContent=labels[jur]||jur;
+  const titles={all:"Lake County Clean Water Program",lakeport:"City of Lakeport — MS4 Dashboard",clearlake:"City of Clearlake — MS4 Dashboard",county:"Lake County — MS4 Dashboard"};
+  document.getElementById('hero-title').textContent=titles[jur]||titles.all;
+  renderTable();
+  if(mapInstance) renderMap();
+}
+
+// NAV
+function nav(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='idde') renderTable();
+  if(id==='idde-form') initForm();
+}
+function nb(id){return document.querySelector(`.nav-btn[onclick*="'${id}'"]`);}
+function stab(group,tab,btn){
+  document.getElementById(group+'-list').classList.toggle('hidden',tab!=='list');
+  document.getElementById(group+'-map').classList.toggle('hidden',tab!=='map');
+  btn.closest('.tab-row').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── FORM FUNCTIONS ──
+function toggleCb(el,isDanger){
+  el.classList.toggle('checked');
+  if(isDanger) el.classList.toggle('d',el.classList.contains('checked'));
+}
+function getChecked(id){
+  return [...document.querySelectorAll('#'+id+' .cb-item.checked')].map(e=>e.textContent.trim()).join(', ')||'—';
+}
+function fmtDate(d){
+  if(!d) return '—';
+  return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+}
+
+// GPS
+function getGPS(){
+  const btn=document.getElementById('gpsBtn'),stat=document.getElementById('gpsStat');
+  if(!navigator.geolocation){stat.className='gps-status err';stat.textContent='GPS not supported';return;}
+  btn.className='btn-gps';btn.innerHTML='Getting location...';stat.textContent='Requesting GPS...';
+  navigator.geolocation.getCurrentPosition(
+    p=>{
+      const lat=p.coords.latitude.toFixed(5),lng=p.coords.longitude.toFixed(5);
+      document.getElementById('lat').value=lat;document.getElementById('lat').className='gps-ok';
+      document.getElementById('lng').value=lng;document.getElementById('lng').className='gps-ok';
+      btn.className='btn-gps success';btn.innerHTML='✓ Location captured';
+      stat.className='gps-status ok';stat.textContent=lat+', '+lng+' (±'+Math.round(p.coords.accuracy)+'m)';
+    },
+    e=>{
+      btn.className='btn-gps error';btn.innerHTML='Try again';
+      stat.className='gps-status err';stat.textContent={1:'Permission denied',2:'Unavailable',3:'Timed out'}[e.code]||'Error';
+    },
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+}
+
+// POLLS
+function checkPolls(){
+  const checked=[...document.querySelectorAll('#poll-grp .cb-item.checked')].map(e=>e.textContent.trim());
+  const is24=checked.some(p=>p==='Sewage'||p==='Hazardous');
+  document.getElementById('poll-alert').classList.toggle('hidden',!is24);
+}
+
+// COMPLIANCE CALC
+function calcComp(){
+  const incD=document.getElementById('incDate')?.value;
+  const incT=document.getElementById('incTime')?.value;
+  const invD=document.getElementById('invDate')?.value;
+  const invT=document.getElementById('invTime')?.value;
+  if(!incD||!incT||!invD||!invT) return;
+  const reported=new Date(incD+'T'+incT),investigated=new Date(invD+'T'+invT);
+  const hrs=(investigated-reported)/3600000;
+  const checked=[...document.querySelectorAll('#poll-grp .cb-item.checked')].map(e=>e.textContent.trim());
+  const is24=checked.some(p=>p==='Sewage'||p==='Hazardous');
+  const win=is24?24:72;
+  const met=hrs<=win&&hrs>=0;
+  const el=document.getElementById('comp-result');
+  if(el){
+    el.classList.remove('hidden');
+    el.innerHTML=`<div class="alert ${hrs<0?'a-warn':met?'a-ok':'a-danger'}"><span class="ai">${hrs<0?'⚠':met?'✓':'⚠'}</span><div>
+      ${hrs<0?'Investigation date is before report date':'Response window <strong>'+(met?'MET':'EXCEEDED')+'</strong>: <strong>'+hrs.toFixed(1)+'</strong> hrs elapsed / <strong>'+win+' hrs</strong> required.'}
+      <span class="cite">${is24?'§E.9.d.(ii)(a)':'§E.9.d.(ii)'}</span>
+    </div></div>`;
+  }
+}
+
+// SOURCE
+function srcChange(){
+  document.getElementById('ca-section').classList.toggle('hidden',document.getElementById('srcId').value!=='yes');
+}
+
+// PHOTOS
+function addPhotos(files){
+  const arr=[...files].filter(f=>f.type.startsWith('image/'));
+  let i=0;
+  function next(){
+    if(i>=arr.length){renderPhotoGrid();return;}
+    const f=arr[i++];
+    const r=new FileReader();
+    r.onload=e=>{photos.push({name:f.name,url:e.target.result});next();};
+    r.readAsDataURL(f);
+  }
+  next();
+}
+function doDrop(e){e.preventDefault();addPhotos(e.dataTransfer.files);}
+function renderPhotoGrid(){
+  const grid=document.getElementById('pg');
+  const zone=document.getElementById('uz');
+  const lbl=document.getElementById('ph-lbl');
+  if(!grid) return;
+  grid.innerHTML=photos.map((p,i)=>`
+    <div class="photo-thumb" onclick="openLB(${i})">
+      <img src="${p.url}" alt="${p.name}"/>
+      <button class="ptr" onclick="event.stopPropagation();rmPhoto(${i})" title="Remove">×</button>
+      <div class="ptn">${p.name}</div>
+    </div>`).join('');
+  if(zone) zone.classList.toggle('filled',photos.length>0);
+  if(lbl) lbl.textContent=photos.length>0?photos.length+' photo'+(photos.length>1?'s':'')+' — tap to view':'';
+}
+function rmPhoto(i){photos.splice(i,1);renderPhotoGrid();}
+
+// LIGHTBOX
+function openLB(i){lbIdx=i;document.getElementById('lb').classList.add('open');updLB();}
+function updLB(){
+  document.getElementById('lb-img').src=photos[lbIdx].url;
+  document.getElementById('lb-cap').textContent='Photo '+(lbIdx+1)+': '+photos[lbIdx].name;
+  document.getElementById('lb-ctr').textContent=(lbIdx+1)+' of '+photos.length;
+}
+function closeLB(){document.getElementById('lb').classList.remove('open');}
+function lbBg(e){if(e.target===document.getElementById('lb'))closeLB();}
+function lbNav(d){lbIdx=(lbIdx+d+photos.length)%photos.length;updLB();}
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('lb').classList.contains('open')) return;
+  if(e.key==='ArrowLeft') lbNav(-1);
+  if(e.key==='ArrowRight') lbNav(1);
+  if(e.key==='Escape') closeLB();
+});
+
+// PARAM TABLE
+function checkParam(el){
+  const v=parseFloat(el.value),p=el.dataset.p,flag=document.getElementById('f-'+p);
+  if(isNaN(v)||el.value===''){el.className='pi2';flag.className='pf pf-empty';flag.textContent='Not tested';updExceeded();return;}
+  let exc=false;
+  if(el.dataset.op==='gte') exc=v>=parseFloat(el.dataset.t);
+  else if(el.dataset.op==='range') exc=v<=parseFloat(el.dataset.tl)||v>=parseFloat(el.dataset.th);
+  el.style.background=exc?'#FEF5F5':'#F0F7F4';
+  el.style.borderColor=exc?'#F09595':'#7DD4B3';
+  flag.className='pf '+(exc?'pf-danger':'pf-ok');
+  flag.textContent=exc?'⚠ EXCEEDED':'✓ Within limit';
+  updExceeded();
+}
+function updExceeded(){
+  const any=[...document.querySelectorAll('.pi2')].some(i=>{
+    if(!i.value||isNaN(parseFloat(i.value))) return false;
+    const v=parseFloat(i.value);
+    if(i.dataset.op==='gte') return v>=parseFloat(i.dataset.t);
+    return v<=parseFloat(i.dataset.tl)||v>=parseFloat(i.dataset.th);
+  });
+  document.getElementById('param-alert').classList.toggle('hidden',!any);
+}
+
+// REFERRALS
+function addRef(){
+  refCount++;
+  const id='ref-'+refCount;
+  const opts=CONTACTS.map(c=>`<option value="${c.n}" data-dept="${c.d}">${c.n}</option>`).join('');
+  const row=document.createElement('div');
+  row.className='ref-row';row.id='rr-'+id;
+  row.innerHTML=`
+    <div class="fd"><label style="font-size:10px">Contact</label>
+      <select id="${id}-n" onchange="autoFillDept('${id}')"><option value="">Select</option>${opts}</select>
+    </div>
+    <div class="fd"><label style="font-size:10px">Department</label><input type="text" id="${id}-d" placeholder="Auto-fills"/></div>
+    <div class="fd"><label style="font-size:10px">Date</label><input type="date" id="${id}-dt"/></div>
+    <button class="btn-rm" onclick="document.getElementById('rr-${id}').remove()" title="Remove">×</button>`;
+  document.getElementById('ref-list').appendChild(row);
+}
+function autoFillDept(id){
+  const sel=document.getElementById(id+'-n');
+  document.getElementById(id+'-d').value=sel.options[sel.selectedIndex].dataset.dept||'';
+}
+
+// FORM STEP NAV
+function goFStep(n){
+  for(let i=1;i<=5;i++){
+    const e=document.getElementById('fstep'+i);
+    if(e) e.classList.toggle('hidden',i!==n);
+  }
+  for(let i=1;i<=5;i++){
+    const sc=document.getElementById('sc'+i),sl=document.getElementById('sl'+i);
+    if(i<n){sc.className='sc done';sc.innerHTML='✓';}
+    else if(i===n){sc.className='sc active';sc.innerHTML=i;if(sl)sl.className='sl active';}
+    else{sc.className='sc';sc.innerHTML=i;if(sl)sl.className='sl';}
+  }
+  // Compliance clock on step 2
+  if(n===2){
+    const incD=document.getElementById('incDate')?.value;
+    const incT=document.getElementById('incTime')?.value;
+    if(incD&&incT){
+      const elapsed=(new Date()-new Date(incD+'T'+incT))/3600000;
+      const cw=document.getElementById('cc-wrap');
+      if(cw) cw.style.display='grid';
+      const el=document.getElementById('cc-el');
+      if(el){el.textContent=elapsed.toFixed(1)+' hrs';el.className='cc-val '+(elapsed>72?'danger':elapsed>48?'warn':'ok');}
+    }
+  }
+  // Timer banner on step 3
+  if(n===3){
+    const incD=document.getElementById('incDate')?.value;
+    const incT=document.getElementById('incTime')?.value;
+    const checked=[...document.querySelectorAll('#poll-grp .cb-item.checked')].map(e=>e.textContent.trim());
+    const is24=checked.some(p=>p==='Sewage'||p==='Hazardous');
+    const win=is24?24:72;
+    if(incD&&incT){
+      const reported=new Date(incD+'T'+incT);
+      const deadline=new Date(reported.getTime()+win*3600000);
+      const rem=(deadline-new Date())/3600000;
+      const banner=document.getElementById('inv-banner');
+      if(banner){
+        banner.innerHTML=`<div class="alert ${rem<0?'a-danger':rem<4?'a-warn':'a-info'}"><span class="ai">${rem<0?'⚠':'⏱'}</span><div>
+          <strong>${rem<0?'Investigation window EXCEEDED by '+Math.abs(rem).toFixed(1)+' hrs':rem.toFixed(1)+' hrs remaining in '+win+'-hr window'}</strong>
+          — Deadline: ${deadline.toLocaleDateString('en-US',{month:'short',day:'numeric'})} at ${deadline.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+          <span class="cite">${is24?'§E.9.d.(ii)(a)':'§E.9.d.(ii)'}</span>
+        </div></div>`;
+        banner.classList.remove('hidden');
+      }
+    }
+  }
+  if(n===5) buildSummary();
+  document.getElementById('page-idde-form').scrollTo(0,0);
+}
+
+function buildSummary(){
+  const muni=[...document.querySelectorAll('#muni-grp .cb-item.checked')].map(e=>e.textContent.trim()).join(', ')||'—';
+  const polls=getChecked('poll-grp');
+  const enfs=getChecked('enf-grp');
+  const incD=document.getElementById('incDate')?.value;
+  const incT=document.getElementById('incTime')?.value;
+  const invD=document.getElementById('invDate')?.value;
+  const invT=document.getElementById('invTime')?.value;
+  let compBadge='<span class="badge b-gray">Not calculated</span>';
+  if(incD&&incT&&invD&&invT){
+    const hrs=(new Date(invD+'T'+invT)-new Date(incD+'T'+incT))/3600000;
+    const checked=[...document.querySelectorAll('#poll-grp .cb-item.checked')].map(e=>e.textContent.trim());
+    const win=checked.some(p=>p==='Sewage'||p==='Hazardous')?24:72;
+    const met=hrs<=win&&hrs>=0;
+    compBadge=`<span class="badge ${met?'b-ok':'b-danger'}">${met?'MET':'EXCEEDED'} — ${hrs.toFixed(1)} hrs / ${win}-hr window</span>`;
+  }
+  const exceeded=[...document.querySelectorAll('.pi2')].filter(i=>i.value&&parseFloat(i.value)).filter(i=>{
+    const v=parseFloat(i.value);
+    if(i.dataset.op==='gte') return v>=parseFloat(i.dataset.t);
+    return v<=parseFloat(i.dataset.tl)||v>=parseFloat(i.dataset.th);
+  }).map(i=>i.dataset.p).join(', ');
+  document.getElementById('form-summary').innerHTML=`
+    <div class="sr"><span class="sl2">Case ID</span><span>${document.getElementById('caseId')?.value||'—'}</span></div>
+    <div class="sr"><span class="sl2">CalOES ID</span><span>${document.getElementById('caloesId')?.value||'—'}</span></div>
+    <div class="sr"><span class="sl2">Incident date / time</span><span>${incD} ${incT}</span></div>
+    <div class="sr"><span class="sl2">Municipality</span><span>${muni}</span></div>
+    <div class="sr"><span class="sl2">Location</span><span>${document.getElementById('location')?.value||'—'}</span></div>
+    <div class="sr"><span class="sl2">GPS</span><span>${document.getElementById('lat')?.value?document.getElementById('lat').value+', '+document.getElementById('lng').value:'<span style="color:#BA7517">Not captured</span>'}</span></div>
+    <div class="sr"><span class="sl2">Quantity</span><span>${document.getElementById('qty')?.value?document.getElementById('qty').value+' gallons':'—'}</span></div>
+    <div class="sr"><span class="sl2">Pollutants</span><span>${polls}</span></div>
+    <div class="sr"><span class="sl2">Photos</span><span>${photos.length} attached</span></div>
+    <div class="sr"><span class="sl2">Investigated by</span><span>${document.getElementById('invBy')?.value||'—'}</span></div>
+    <div class="sr"><span class="sl2">Response window</span><span>${compBadge}</span></div>
+    <div class="sr"><span class="sl2">Parameters exceeded</span><span>${exceeded?'<span class="badge b-danger">'+exceeded+'</span>':'None'}</span></div>
+    <div class="sr"><span class="sl2">Enforcement</span><span>${enfs}</span></div>
+    <div class="sr"><span class="sl2">Source identified</span><span>${document.getElementById('srcId')?.value||'—'}</span></div>
+    <div class="sr"><span class="sl2">Abated</span><span>${document.getElementById('abated')?.value||'—'}</span></div>
+  `;
+}
+
+// PDF
+function buildPDFHTML(){
+  const muni=[...document.querySelectorAll('#muni-grp .cb-item.checked')].map(e=>e.textContent.trim()).join(', ')||'—';
+  const polls=getChecked('poll-grp');
+  const acts=getChecked('act-grp');
+  const enfs=getChecked('enf-grp');
+  const caseId=document.getElementById('caseId')?.value||'—';
+  const allPhotos=photos;
+  let photoSection='';
+  if(allPhotos.length>0){
+    let rows='';
+    for(let i=0;i<allPhotos.length;i+=2){
+      rows+=`<tr>`;
+      for(let j=i;j<Math.min(i+2,allPhotos.length);j++){
+        rows+=`<td style="width:50%;padding:10px;vertical-align:top;text-align:center">
+          <img src="${allPhotos[j].url}" style="max-width:100%;max-height:260px;object-fit:contain;border:0.5pt solid #ccc;border-radius:4px;display:block;margin:0 auto"/>
+          <div style="font-size:8pt;color:#555;margin-top:6px;font-style:italic">Photo ${j+1}: ${allPhotos[j].name}</div>
+        </td>`;
+      }
+      if(allPhotos.length%2!==0&&i===allPhotos.length-1) rows+=`<td style="width:50%"></td>`;
+      rows+=`</tr>`;
+    }
+    photoSection=`<div style="page-break-before:always">
+      <div style="border-bottom:3px solid #2B6E7E;padding-bottom:10px;margin-bottom:18px">
+        <div style="font-size:13pt;font-weight:bold;color:#1D5069">Photo Appendix</div>
+        <div style="font-size:8.5pt;color:#777;margin-top:2px">Case ${caseId} · ${allPhotos.length} photo${allPhotos.length>1?'s':''} · ${fmtDate(document.getElementById('invDate')?.value)}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse">${rows}</table>
+    </div>`;
+  }
+  const incD=document.getElementById('incDate')?.value;
+  const incT=document.getElementById('incTime')?.value;
+  const invD=document.getElementById('invDate')?.value;
+  const invT=document.getElementById('invTime')?.value;
+  let compLine='—';
+  if(incD&&incT&&invD&&invT){
+    const hrs=(new Date(invD+'T'+invT)-new Date(incD+'T'+incT))/3600000;
+    const checked=[...document.querySelectorAll('#poll-grp .cb-item.checked')].map(e=>e.textContent.trim());
+    const win=checked.some(p=>p==='Sewage'||p==='Hazardous')?24:72;
+    const met=hrs<=win&&hrs>=0;
+    compLine=`<span style="display:inline-block;background:${met?'#E1F5EE':'#FCEBEB'};color:${met?'#0F6E56':'#A32D2D'};border-radius:3px;padding:1px 6px;font-size:8pt;font-weight:bold">${met?'MET':'EXCEEDED'}</span> — ${hrs.toFixed(1)} hrs / ${win}-hr required`;
+  }
+  return`<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>IDDE Report — ${caseId}</title>
+<style>
+@page{size:letter;margin:0.7in}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+body{font-size:10pt;color:#111;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hdr{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:3px solid #2B6E7E;margin-bottom:16px}
+.logo{width:58px;height:58px;border-radius:50%;background:#E0EEF2;border:2px solid #2B6E7E;display:flex;align-items:center;justify-content:center;font-size:7pt;font-weight:bold;color:#2B6E7E;text-align:center;line-height:1.3;flex-shrink:0}
+.ht{flex:1}
+.org{font-size:14pt;font-weight:bold;color:#1D5069}
+.dt{font-size:11pt;color:#2B6E7E;font-weight:600;margin-top:2px}
+.meta{font-size:8pt;color:#888;margin-top:2px}
+.cb{background:#1D5069;color:#fff;padding:7px 13px;border-radius:6px;text-align:center;flex-shrink:0}
+.cb-id{font-size:11pt;font-weight:bold}
+.cb-sub{font-size:7pt;color:rgba(255,255,255,0.7);margin-top:2px}
+.sec{margin-bottom:14px}
+.sh{background:#2B6E7E;color:#fff;font-size:8.5pt;font-weight:bold;padding:4px 9px;border-radius:3px;margin-bottom:9px;text-transform:uppercase;letter-spacing:0.05em}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:7px 18px;margin-bottom:7px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px 14px;margin-bottom:7px}
+.fl{font-size:7pt;font-weight:bold;color:#666;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px}
+.fv{font-size:10pt;color:#111;padding-bottom:3px;border-bottom:0.5pt solid #ddd;min-height:17px}
+.fv.na{color:#bbb;font-style:italic}
+.obs{border:0.5pt solid #ccc;border-radius:3px;padding:7px;font-size:10pt;line-height:1.6;min-height:56px;white-space:pre-wrap}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:16px;padding-top:12px;border-top:1pt solid #ccc}
+.sl{border-bottom:1pt solid #111;height:28px;margin-bottom:4px}
+.slbl{font-size:7.5pt;color:#777}
+.ftr{position:fixed;bottom:0.35in;left:0.7in;right:0.7in;border-top:0.5pt solid #ddd;padding-top:4px;display:flex;justify-content:space-between;font-size:7pt;color:#aaa}
+.bdg{display:inline-block;background:#FCEBEB;color:#A32D2D;border:0.5pt solid #F09595;padding:1px 5px;border-radius:3px;font-size:7.5pt;font-weight:bold;margin-left:4px}
+</style>
+</head><body>
+<div class="hdr">
+  <div class="logo">LAKE CO<br>CLEAN<br>WATER</div>
+  <div class="ht">
+    <div class="org">Lake County Clean Water Program</div>
+    <div class="dt">Illicit Discharge Investigation Report</div>
+    <div class="meta">MS4 Permit WQ 2013-0001-DWQ · §E.9.d · Generated: ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
+  </div>
+  <div class="cb"><div class="cb-id">${caseId}</div><div class="cb-sub">Case ID</div></div>
+</div>
+<div class="sec">
+  <div class="sh">Incident Identification</div>
+  <div class="g3">
+    <div><div class="fl">CalOES Incident ID</div><div class="fv ${!document.getElementById('caloesId')?.value?'na':''}">${document.getElementById('caloesId')?.value||'—'}</div></div>
+    <div><div class="fl">Incident Date</div><div class="fv">${fmtDate(incD)}</div></div>
+    <div><div class="fl">Incident Time</div><div class="fv">${incT||'—'}</div></div>
+  </div>
+  <div class="g2">
+    <div><div class="fl">Municipality</div><div class="fv">${muni}</div></div>
+    <div><div class="fl">Location of Discharge</div><div class="fv">${document.getElementById('location')?.value||'—'}</div></div>
+  </div>
+  <div class="g3">
+    <div><div class="fl">GPS Coordinates</div><div class="fv">${document.getElementById('lat')?.value?document.getElementById('lat').value+', '+document.getElementById('lng').value:'—'}</div></div>
+    <div><div class="fl">Responsible Party</div><div class="fv">${document.getElementById('rpName')?.value||'—'}${document.getElementById('rpCompany')?.value?' — '+document.getElementById('rpCompany').value:''}</div></div>
+    <div><div class="fl">RP Phone</div><div class="fv">${document.getElementById('rpPhone')?.value||'—'}</div></div>
+  </div>
+</div>
+<div class="sec">
+  <div class="sh">Discharge Classification</div>
+  <div class="g3">
+    <div><div class="fl">Pollutant Type</div><div class="fv">${polls}${polls.includes('Sewage')||polls.includes('Hazardous')?'<span class="bdg">24-HR</span>':''}</div></div>
+    <div><div class="fl">Activity</div><div class="fv">${acts}</div></div>
+    <div><div class="fl">Quantity</div><div class="fv">${document.getElementById('qty')?.value?document.getElementById('qty').value+' gallons':'—'}</div></div>
+  </div>
+  <div class="g3">
+    <div><div class="fl">Entered Waterbody</div><div class="fv">${document.getElementById('ewb')?.value||'—'}</div></div>
+    <div><div class="fl">Waterbody Name</div><div class="fv">${document.getElementById('wbn')?.value||'—'}</div></div>
+    <div><div class="fl">Notified Env. Health</div><div class="fv">${document.getElementById('neh')?.value||'—'}</div></div>
+  </div>
+</div>
+<div class="sec">
+  <div class="sh">Investigation</div>
+  <div class="g3">
+    <div><div class="fl">Investigation Date</div><div class="fv">${fmtDate(invD)}</div></div>
+    <div><div class="fl">Investigation Time</div><div class="fv">${invT||'—'}</div></div>
+    <div><div class="fl">Investigated By</div><div class="fv">${document.getElementById('invBy')?.value||'—'}</div></div>
+  </div>
+  <div style="margin-bottom:7px"><div class="fl">Response Window Compliance</div><div class="fv">${compLine}</div></div>
+  <div style="margin-bottom:9px"><div class="fl">Observations</div><div class="obs">${(document.getElementById('obs')?.value||'—')}</div></div>
+  <div class="g3">
+    <div><div class="fl">Weather</div><div class="fv">${document.getElementById('weather')?.value||'—'}</div></div>
+    <div><div class="fl">Days Since Rain</div><div class="fv">${document.getElementById('daysRain')?.value||'—'}</div></div>
+    <div><div class="fl">Active at Investigation</div><div class="fv">${document.getElementById('activeAtInv')?.value||'—'}</div></div>
+  </div>
+  <div class="g3">
+    <div><div class="fl">Sample Taken</div><div class="fv">${document.getElementById('sampleTaken')?.value||'—'}</div></div>
+    <div><div class="fl">Education Materials</div><div class="fv">${document.getElementById('edMat')?.value||'—'}</div></div>
+    <div><div class="fl">Complainant Advised</div><div class="fv">${document.getElementById('compAdvised')?.value||'—'}</div></div>
+  </div>
+  <div class="g2">
+    <div><div class="fl">Enforcement Action</div><div class="fv">${enfs}</div></div>
+    <div><div class="fl">Photos Attached</div><div class="fv">${photos.length>0?photos.length+' photo'+(photos.length>1?'s':'')+' — see appendix':'None'}</div></div>
+  </div>
+</div>
+<div class="sec">
+  <div class="sh">Corrective Action</div>
+  <div style="margin-bottom:9px"><div class="fl">Corrective Actions Required</div><div class="obs">${document.getElementById('caReq')?.value||'—'}</div></div>
+  <div class="g3">
+    <div><div class="fl">Compliance Date</div><div class="fv">${fmtDate(document.getElementById('compDate')?.value)}</div></div>
+    <div><div class="fl">Abated</div><div class="fv">${document.getElementById('abated')?.value||'—'}</div></div>
+    <div><div class="fl">Source Identified</div><div class="fv">${document.getElementById('srcId')?.value||'—'}</div></div>
+  </div>
+</div>
+${document.getElementById('fuDate')?.value?`
+<div class="sec">
+  <div class="sh">Follow-Up</div>
+  <div class="g3">
+    <div><div class="fl">Follow-Up Date</div><div class="fv">${fmtDate(document.getElementById('fuDate').value)}</div></div>
+    <div><div class="fl">Conducted By</div><div class="fv">${document.getElementById('fuBy').value||'—'}</div></div>
+    <div><div class="fl">Method</div><div class="fv">${document.getElementById('fuMethod').value||'—'}</div></div>
+  </div>
+  <div style="margin-bottom:9px"><div class="fl">Observations</div><div class="obs">${document.getElementById('fuObs').value||'—'}</div></div>
+  <div class="g2">
+    <div><div class="fl">Abated</div><div class="fv">${document.getElementById('fuAbated').value||'—'}</div></div>
+    <div><div class="fl">Sample Taken</div><div class="fv">${document.getElementById('fuSample').value||'—'}</div></div>
+  </div>
+</div>`:''}<div class="sig">
+  <div><div class="sl"></div><div class="slbl">Investigating Officer — Signature &amp; Date</div></div>
+  <div><div class="sl"></div><div class="slbl">Supervisor Review — Signature &amp; Date</div></div>
+</div>
+<div class="ftr">
+  <span>Lake County Clean Water Program · WQ 2013-0001-DWQ · §E.9.d</span>
+  <span>${caseId} · REGULATORY DOCUMENT</span>
+</div>
+${photoSection}
+</body></html>`;
+}
+
+function showPreview(){
+  const html=buildPDFHTML();
+  const frame=document.getElementById('previewFrame');
+  const panel=document.getElementById('previewPanel');
+  document.getElementById('prev-case-id').textContent=document.getElementById('caseId')?.value||'';
+  frame.srcdoc=html;
+  panel.classList.add('visible');
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+function closePreview(){document.getElementById('previewPanel').classList.remove('visible');}
+function doPrint(){
+  const frame=document.getElementById('previewFrame');
+  if(frame.contentWindow){frame.contentWindow.focus();frame.contentWindow.print();}
+}
+
+
+function resetForm(){
+  photos.length=0;renderPhotoGrid();
+  document.querySelectorAll('.pi2').forEach(i=>{i.value='';i.style.background='';i.style.borderColor='';});
+  document.querySelectorAll('.pf').forEach(f=>{f.className='pf pf-empty';f.textContent='Not tested';});
+  document.querySelectorAll('.cb-item.checked').forEach(c=>c.classList.remove('checked','d'));
+  document.getElementById('ref-list').innerHTML='';
+  document.getElementById('previewPanel').classList.remove('visible');
+  refCount=0;
+  initForm();
+  goFStep(1);
+}
+
+function setSigCont(val){
+  // Reset all three options to unselected state
+  const opts={
+    yes:{border:'0.5px solid #c5cdd2',bg:'#fff',color:'',weight:'',boxBorder:'1.5px solid #c5cdd2',boxBg:'',check:''},
+    no:{border:'0.5px solid #c5cdd2',bg:'#fff',color:'',weight:'',boxBorder:'1.5px solid #c5cdd2',boxBg:'',check:''},
+    unk:{border:'0.5px solid #c5cdd2',bg:'#fff',color:'',weight:'',boxBorder:'1.5px solid #c5cdd2',boxBg:'',check:''}
+  };
+  // Apply selected state
+  if(val==='yes'){opts.yes={border:'0.5px solid #E24B4A',bg:'#FEF5F5',color:'#A32D2D',weight:'600',boxBorder:'1.5px solid #E24B4A',boxBg:'#E24B4A',check:'✓'};}
+  else if(val==='no'){opts.no={border:'0.5px solid #2B6E7E',bg:'#E0EEF2',color:'#1D5069',weight:'600',boxBorder:'1.5px solid #2B6E7E',boxBg:'#2B6E7E',check:'✓'};}
+  else{opts.unk={border:'0.5px solid #2B6E7E',bg:'#E0EEF2',color:'#1D5069',weight:'600',boxBorder:'1.5px solid #2B6E7E',boxBg:'#2B6E7E',check:'✓'};}
+  ['yes','no','unk'].forEach(k=>{
+    const el=document.getElementById('sig-'+k);
+    const box=document.getElementById('sig-'+k+'-box');
+    if(!el||!box) return;
+    el.style.border=opts[k].border;
+    el.style.background=opts[k].bg;
+    el.style.color=opts[k].color;
+    el.style.fontWeight=opts[k].weight;
+    box.style.border=opts[k].boxBorder;
+    box.style.background=opts[k].boxBg;
+    box.innerHTML=opts[k].check?`<span style="color:#fff;font-size:9px">${opts[k].check}</span>`:'';
+  });
+  // Show/hide alerts using display not class
+  document.getElementById('sig-24').style.display=val==='yes'?'block':'none';
+  document.getElementById('sig-72').style.display=val==='no'?'block':'none';
+}
+
+  else if(val==='no'){document.getElementById('sig-no').classList.add('checked');}
+  else{document.getElementById('sig-unk').classList.add('checked');}
+  document.getElementById('sig-24').classList.toggle('hidden',val!=='yes');
+  document.getElementById('sig-72').classList.toggle('hidden',val!=='no');
+}
+
+// LOGIN
+function doLogin(){
+  const pw=document.getElementById('login-pw').value;
+  if(pw==='CWP2026!'){
+    document.getElementById('login-screen').style.display='none';
+  } else {
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('login-pw').value='';
+    document.getElementById('login-pw').focus();
+  }
+}
+
+// INIT
+renderTable();
+</script>
+</body></html>
