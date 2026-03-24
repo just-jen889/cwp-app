@@ -2324,9 +2324,12 @@ function setSigCont(val){
 }
 
 // LOGIN
+
+
 function doLogin(){
-  const pw=document.getElementById('login-pw').value;
-  if(pw.trim()==='CWP2026'){
+  var pw=document.getElementById('login-pw').value;
+  var correct='CWP2026';
+  if(pw.trim()===correct){
     document.getElementById('login-screen').style.display='none';
   } else {
     document.getElementById('login-err').style.display='block';
